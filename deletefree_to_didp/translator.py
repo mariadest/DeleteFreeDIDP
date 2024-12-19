@@ -25,61 +25,92 @@ def main():
     
     
     sas_task = translate.pddl_to_sas(task)
-    print("-------------------------------------------")
-    '''for var_index, (var_range, axiom_layer, value_names) in enumerate(
-        zip(sas_task.variables.ranges, sas_task.variables.axiom_layers, sas_task.variables.value_names)):
-            print(f"Variable v{var_index}:")
-            print(f"  Range: {var_range}")
-            print(f"  Axiom Layer: {axiom_layer}")
-            print(f"  Values: {', '.join(value_names)}")    '''
-    # building dypdl task 
-    model = dp.Model()
+
+    #TODO: Check if all variables have 2 values -> stop if not
     
-    #variables
-    initial_state = (sas_task.init.values)  # initial state values
+    # building dypdl task from here on out
+    model = dp.Model()
+    switched = False    # checks if negated variables have value 2 instead of value 1
+    
+    #----------------#
+    #   VARIABLES    #
+    #----------------#
+    initial_state = (sas_task.init.values)  # initial state values for easy accesss
+    dypdl_vars = []     # store all dydpl variables for later access
     
     # adding a new int_var for each sas variable   
-    
-    # takes variable name and checks whether negated is in first or second position 
-    # uses 
-    dypdl_vars = []
-    
     for i, var in enumerate(sas_task.variables.value_names): 
-        print("Variable: " + var[0] + ", " + var[1])
-        print("---------------------")
-        
-        # check if negated variable has value 1 -> need to switch values 0 and 1 for dypdl variable
+        # check if negated variable has value 1 instead of 0
+        # -> need to switch values 0 and 1 for dypdl variable
+        # WILL ASSUME ALL VALUES ARE SWITCHED -> TODO?
         if (var[1].startswith("Negated")):
+            switched = True
             if (initial_state[i] == 1):
                 var = model.add_int_var(target=0)
             else:
                 var = model.add_int_var(target=1)
         else:
             var = model.add_int_var(target=initial_state[i])
-        dypdl_vars.append(var)  # add var to the list of dydpl vars to be able to access it
+        dypdl_vars.append(var) 
             
     
-    # TODO: constants
-    #state_values = [0, 1]
-    #state_values_table = model.add_int_table([0, 1])
-    
-    ''''action_costs = []
+    #---------------#
+    #   CONSTANTS   #
+    #---------------#
+    action_costs = []
     for action in sas_task.operators:
         action_costs.append(action.cost)
     cost_table = model.add_int_table(action_costs)
-        
-    # TODO: base cases
-    goal_variables = []
-    for variable, value in sas_task.goal.pairs:
-        if (value != 0):       # assuming this will always be 1 
-            goal_variables.append(variable)
-            print("variable: " + variable + " chont dri")
-        print(f"Variable {variable} must have value {value}")'''
     
-    #for variable, value in sas_task.goal.pairs:
-        
-        
-    # TODO: transitions
+    
+    #-----------------#
+    #   BASE CASES    #
+    #-----------------#
+    goal_variables = []
+    
+    for variable, value in sas_task.goal.pairs:
+        if (switched):
+            if (value == 0): 
+                goal_variables.append(dypdl_vars[variable])    
+
+    #def create_conditions(variables, value):
+        #return [var == value for var in variables]
+    #conditions = create_conditions(goal_variables, 1)
+    
+    model.add_base_case([var == 1 for var in goal_variables])    
+    
+    # ------------------#
+    #    TRANSITIONS
+    # ------------------#
+    # get variables for which preconditions hold and their values
+    precondition_variables = []
+    precondition_values = []
+    for action in sas_task.operators:
+        for variable, value in action.prevail:
+            precondition_variables.append(dypdl_vars[variable])
+            if (switched):
+                if(value == 1):
+                    precondition_values.append(0)
+                else:
+                    precondition_values.append(1)
+            else:
+                precondition_values.append[value]
+    
+    action_count = len(sas_task.operators)
+    
+    # add a transitions for each action
+    for i in range (action_count):
+        transition = dp.Transition(
+            name="transition {}".format(i),
+            cost = cost_table[i] + dp.IntExpr.state_cost(),
+            preconditions=[
+                #TODO
+            ],
+            effects=[
+                #TODO
+            ]
+        )
+    model.add_transition(transition)
     
     # TODO: optional state constraints & 
 
