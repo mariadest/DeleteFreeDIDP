@@ -39,3 +39,5 @@ if __name__ == "__main__":
     main()
 
     
+# sastasks aluege det eschs glaub s meiste dinne 
+    

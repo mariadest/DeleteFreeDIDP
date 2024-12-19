@@ -1,61 +1,48 @@
-(define (domain miconic)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; 4 Op-blocks world
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (domain BLOCKS)
   (:requirements :strips)
-  
+  (:predicates (on ?x ?y)
+	       (ontable ?x)
+	       (clear ?x)
+	       (handempty)
+	       (holding ?x)
+	       )
 
-(:predicates 
-(origin ?person ?floor )
-;; entry of ?person is ?floor
-;; inertia
+  (:action pick-up
+	     :parameters (?x)
+	     :precondition (and (clear ?x) (ontable ?x) (handempty))
+	     :effect
+	     (and (not (ontable ?x))
+		   (not (clear ?x))
+		   (not (handempty))
+		   (holding ?x)))
 
-(floor ?floor)
-(passenger ?passenger)
-
-(destin ?person ?floor )
-;; exit of ?person is ?floor
-;; inertia
-
-(above ?floor1 ?floor2 )
-;; ?floor2 is located above of ?floor1
-
-(boarded ?person )
-;; true if ?person has boarded the lift
-
-(served ?person )
-;; true if ?person has alighted as her destination
-
-(lift-at ?floor )
-;; current position of the lift is at ?floor
-)
-
-
-;;stop and allow boarding
-
-(:action board
-  :parameters (?f ?p)
-  :precondition (and (floor ?f) (passenger ?p)(lift-at ?f) (origin ?p ?f))
-  :effect (boarded ?p))
-
-(:action depart
-  :parameters (?f  ?p)
-  :precondition (and (floor ?f) (passenger ?p) (lift-at ?f) (destin ?p ?f)
-		     (boarded ?p))
-  :effect (and (not (boarded ?p))
-	       (served ?p)))
-;;drive up
-
-(:action up
-  :parameters (?f1 ?f2)
-  :precondition (and (floor ?f1) (floor ?f2) (lift-at ?f1) (above ?f1 ?f2))
-  :effect (and (lift-at ?f2) (not (lift-at ?f1))))
-
-
-;;drive down
-
-(:action down
-  :parameters (?f1 ?f2)
-  :precondition (and (floor ?f1) (floor ?f2) (lift-at ?f1) (above ?f2 ?f1))
-  :effect (and (lift-at ?f2) (not (lift-at ?f1))))
-)
-
-
-
+  (:action put-down
+	     :parameters (?x)
+	     :precondition (holding ?x)
+	     :effect
+	     (and (not (holding ?x))
+		   (clear ?x)
+		   (handempty)
+		   (ontable ?x)))
+  (:action stack
+	     :parameters (?x ?y)
+	     :precondition (and (holding ?x) (clear ?y))
+	     :effect
+	     (and (not (holding ?x))
+		   (not (clear ?y))
+		   (clear ?x)
+		   (handempty)
+		   (on ?x ?y)))
+  (:action unstack
+	     :parameters (?x ?y)
+	     :precondition (and (on ?x ?y) (clear ?x) (handempty))
+	     :effect
+	     (and (holding ?x)
+		   (clear ?y)
+		   (not (clear ?x))
+		   (not (handempty))
+		   (not (on ?x ?y)))))
