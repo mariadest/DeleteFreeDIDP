@@ -105,6 +105,7 @@ model.add_base_case([
     c4 == 1
 ])
 
+
 #-------#
 # Solver
 #-------#

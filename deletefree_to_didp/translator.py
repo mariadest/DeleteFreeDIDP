@@ -72,42 +72,29 @@ def main():
         if (switched):
             if (value == 0): 
                 goal_variables.append(dypdl_vars[variable])    
-
-    #def create_conditions(variables, value):
-        #return [var == value for var in variables]
-    #conditions = create_conditions(goal_variables, 1)
     
     model.add_base_case([var == 1 for var in goal_variables])    
     
     # ------------------#
     #    TRANSITIONS
     # ------------------#
-    # get variables for which preconditions hold and their values
-    precondition_variables = []
-    precondition_values = []
-    for action in sas_task.operators:
-        for variable, value in action.prevail:
-            precondition_variables.append(dypdl_vars[variable])
-            if (switched):
-                if(value == 1):
-                    precondition_values.append(0)
-                else:
-                    precondition_values.append(1)
-            else:
-                precondition_values.append[value]
-    
-    action_count = len(sas_task.operators)
-    
-    # add a transitions for each action
-    for i in range (action_count):
+      
+    # ASSUMING SWITCHED
+    for i, action in enumerate(sas_task.operators):
         transition = dp.Transition(
             name="transition {}".format(i),
             cost = cost_table[i] + dp.IntExpr.state_cost(),
             preconditions=[
-                #TODO
+                # prevail conditions - not sure if needed?
+                #dypdl_vars[var] == (1 if val == 0 else 0)       # assume switched
+                #for var, val in action.prevail 
+                dypdl_vars[var] == (1 if val == 0 else 0)  # Flip 0 and 1
+                for _, var, _, val in action.pre_post
+                if val != -1  # Skip if val == -1
             ],
-            effects=[
-                #TODO
+            effects=[ 
+                (dypdl_vars[var], 1 if val == 0 else 0)  # Switch values for 0 and 1
+                for _, var, val, _ in action.pre_post
             ]
         )
     model.add_transition(transition)
