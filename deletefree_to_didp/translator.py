@@ -43,17 +43,19 @@ def main():
         # check if negated variable has value 1 instead of 0
         # -> need to switch values 0 and 1 for dypdl variable
         # WILL ASSUME ALL VALUES ARE SWITCHED -> TODO?
+        
         if (var[1].startswith("Negated")):
             switched = True
             if (initial_state[i] == 1):
                 var = model.add_int_var(target=0)
             else:
                 var = model.add_int_var(target=1)
-        else:
-            var = model.add_int_var(target=initial_state[i])
         dypdl_vars.append(var) 
-            
-    
+    state = model.target_state
+    print("Initial state: ")
+    for i, var in enumerate(dypdl_vars):
+        print("variable " +  str(i) + " with value " + str(state[var])) 
+        
     #---------------#
     #   CONSTANTS   #
     #---------------#
@@ -71,33 +73,46 @@ def main():
     for variable, value in sas_task.goal.pairs:
         if (switched):
             if (value == 0): 
-                goal_variables.append(dypdl_vars[variable])    
+                goal_variables.append(dypdl_vars[variable]) 
+                print("adding variable " + str(variable) + " to goal state which has currently value: ") 
+                print(state[dypdl_vars[variable]])  
     
     model.add_base_case([var == 1 for var in goal_variables])    
+    
     
     # ------------------#
     #    TRANSITIONS
     # ------------------#
       
-    # ASSUMING SWITCHED
-    for i, action in enumerate(sas_task.operators):
+    # ASSUMING SWITCHED     
+    for i, action in enumerate(sas_task.operators):        
         transition = dp.Transition(
             name="transition {}".format(i),
             cost = cost_table[i] + dp.IntExpr.state_cost(),
             preconditions=[
-                # prevail conditions - not sure if needed?
-                #dypdl_vars[var] == (1 if val == 0 else 0)       # assume switched
-                #for var, val in action.prevail 
-                dypdl_vars[var] == (1 if val == 0 else 0)  # Flip 0 and 1
-                for _, var, _, val in action.pre_post
-                if val != -1  # Skip if val == -1
+                dypdl_vars[var] == (1 if preval == 0 else 0)  # Flip 0 and 1
+                for var, preval, _, _ in action.pre_post
+                if preval != -1
             ],
             effects=[ 
                 (dypdl_vars[var], 1 if val == 0 else 0)  # Switch values for 0 and 1
-                for _, var, val, _ in action.pre_post
+                for var, _, val, _ in action.pre_post
             ]
         )
-    model.add_transition(transition)
+        model.add_transition(transition)
+    
+    #-------#
+    # Solver
+    #-------#
+    solver = dp.CAASDy(model, time_limit=10)
+    solution = solver.search()
+
+    print("Transitions to apply:")
+
+    for t in solution.transitions:
+        print(t.name)
+
+    print("Cost: {}".format(solution.cost))
     
     # TODO: optional state constraints & 
 

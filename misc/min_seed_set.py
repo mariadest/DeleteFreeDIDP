@@ -109,7 +109,7 @@ model.add_base_case([
 #-------#
 # Solver
 #-------#
-solver = dp.CABS(model, time_limit=2)
+solver = dp.CAASDy(model, time_limit=2)
 solution = solver.search()
 
 print("Transitions to apply:")
