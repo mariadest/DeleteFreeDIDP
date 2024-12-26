@@ -10,7 +10,7 @@ import third_party.normalize as normalize
 import third_party.translate as translate
 import didppy as dp
 
-
+# It's assumed that all variables have 2 values -> #TODO: add check?
 def main():
     task = pddl_parsing.open(
          domain_filename=options.domain, task_filename=options.task)
@@ -25,36 +25,22 @@ def main():
     
     
     sas_task = translate.pddl_to_sas(task)
-
-    #TODO: Check if all variables have 2 values -> stop if not
     
     # building dypdl task from here on out
+    # NOTE: While we use 0 as the default value for negated variables, SAS+ (and this translator) use 1 instead
     model = dp.Model()
-    switched = False    # checks if negated variables have value 2 instead of value 1
     
     #----------------#
     #   VARIABLES    #
     #----------------#
-    initial_state = (sas_task.init.values)  # initial state values for easy accesss
+    initial_state = (sas_task.init.values)
     dypdl_vars = []     # store all dydpl variables for later access
     
-    # adding a new int_var for each sas variable   
-    for i, var in enumerate(sas_task.variables.value_names): 
-        # check if negated variable has value 1 instead of 0
-        # -> need to switch values 0 and 1 for dypdl variable
-        # WILL ASSUME ALL VALUES ARE SWITCHED -> TODO?
-        
-        if (var[1].startswith("Negated")):
-            switched = True
-            if (initial_state[i] == 1):
-                var = model.add_int_var(target=0)
-            else:
-                var = model.add_int_var(target=1)
-        dypdl_vars.append(var) 
-    state = model.target_state
-    print("Initial state: ")
-    for i, var in enumerate(dypdl_vars):
-        print("variable " +  str(i) + " with value " + str(state[var])) 
+    for i, var in enumerate(sas_task.variables.value_names):
+        var = model.add_int_var(target=initial_state[i])
+        dypdl_vars.append(var)
+    
+    state = model.target_state  # used for debugging
         
     #---------------#
     #   CONSTANTS   #
@@ -68,34 +54,23 @@ def main():
     #-----------------#
     #   BASE CASES    #
     #-----------------#
-    goal_variables = []
-    
-    for variable, value in sas_task.goal.pairs:
-        if (switched):
-            if (value == 0): 
-                goal_variables.append(dypdl_vars[variable]) 
-                print("adding variable " + str(variable) + " to goal state which has currently value: ") 
-                print(state[dypdl_vars[variable]])  
-    
-    model.add_base_case([var == 1 for var in goal_variables])    
+    model.add_base_case([dypdl_vars[var] == val for var,val in sas_task.goal.pairs])    
     
     
     # ------------------#
     #    TRANSITIONS
     # ------------------#
-      
-    # ASSUMING SWITCHED     
-    for i, action in enumerate(sas_task.operators):        
+    for i, action in enumerate(sas_task.operators):
         transition = dp.Transition(
             name="transition {}".format(i),
             cost = cost_table[i] + dp.IntExpr.state_cost(),
             preconditions=[
-                dypdl_vars[var] == (1 if preval == 0 else 0)  # Flip 0 and 1
+                dypdl_vars[var] == preval
                 for var, preval, _, _ in action.pre_post
                 if preval != -1
             ],
-            effects=[ 
-                (dypdl_vars[var], 1 if val == 0 else 0)  # Switch values for 0 and 1
+            effects=[
+                (dypdl_vars[var], val)
                 for var, _, val, _ in action.pre_post
             ]
         )
@@ -104,7 +79,7 @@ def main():
     #-------#
     # Solver
     #-------#
-    solver = dp.CAASDy(model, time_limit=10)
+    solver = dp.DBDFS(model, time_limit=30)
     solution = solver.search()
 
     print("Transitions to apply:")
@@ -113,8 +88,6 @@ def main():
         print(t.name)
 
     print("Cost: {}".format(solution.cost))
-    
-    # TODO: optional state constraints & 
 
 if __name__ == "__main__":
     main()
