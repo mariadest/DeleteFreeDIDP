@@ -1,3 +1,5 @@
+# Translator mapping STRIPS variables to DIDP variables
+
 import sys
 import os
 
@@ -35,6 +37,7 @@ def main():
     #----------------#
     initial_state = (sas_task.init.values)
     dypdl_vars = []     # store all dydpl variables for later access
+    print(initial_state)
     
     for i, var in enumerate(sas_task.variables.value_names):
         var = model.add_int_var(target=initial_state[i])
@@ -65,9 +68,10 @@ def main():
             name="transition {}".format(i),
             cost = cost_table[i] + dp.IntExpr.state_cost(),
             preconditions=[
-                dypdl_vars[var] == preval
-                for var, preval, _, _ in action.pre_post
-                if preval != -1
+                dypdl_vars[var] == pre
+                for var, pre, _, _ in action.pre_post       # different order than on fast dowanward website!! (precondition would be in last place)
+                if pre != -1 
+                # currently ignoring prevail conditions -> needed?
             ],
             effects=[
                 (dypdl_vars[var], val)
@@ -79,7 +83,7 @@ def main():
     #-------#
     # Solver
     #-------#
-    solver = dp.DBDFS(model, time_limit=30)
+    solver = dp.DFBB(model, time_limit=30)
     solution = solver.search()
 
     print("Transitions to apply:")
