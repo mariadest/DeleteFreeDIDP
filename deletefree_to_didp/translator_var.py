@@ -63,14 +63,18 @@ def main():
     #    TRANSITIONS
     # ------------------#
     for i, action in enumerate(sas_task.operators):
+        for var, val in action.prevail:
+            print("var: " + str(var))
+            print("val: " + str(val))
         transition = dp.Transition(
             name="transition {}".format(i),
             cost = cost_table[i] + dp.IntExpr.state_cost(),
             preconditions=[
-                dypdl_vars[var] == pre
-                for var, pre, _, _ in action.pre_post       # different order than on fast dowanward website!! var, pre, new value, _
-                if pre != -1 
-                # currently ignoring prevail conditions -> needed?
+                dypdl_vars[pre] == val              # prevail conditions
+                for pre, val in action.prevail
+            ] + [
+                dypdl_vars[pre] == val              # preconditions
+                for pre, val, _, _ in action.pre_post if val != -1
             ],
             effects=[
                 (dypdl_vars[var], val)
@@ -78,7 +82,8 @@ def main():
             ]
         )
         model.add_transition(transition)
-    
+        
+        
     #-------#
     # Solver
     #-------#

@@ -52,6 +52,18 @@ def main():
         action_costs.append(action.cost)
     cost_table = model.add_int_table(action_costs)
     
+    # save the preconditions for all actions as set constants
+    # ONLY SAVING PRECONDITIONS WHICH ARE POSITIVE (value 0)
+    all_preconditions = []
+    for action in sas_task.operators:
+        preconditions = [var for var, pre, _, _ in action.pre_post if pre == 0]  # add preconditions
+        preconditions.extend([var for var, val in action.prevail if val == 0])  # convert generator to list and extend
+        all_preconditions.append(preconditions)
+    #print(all_preconditions)
+    action_preconditions = model.add_int_table(all_preconditions)
+    print()
+    print(len(all_preconditions[]))
+
     #-----------------#
     #   BASE CASES    #
     #-----------------#
@@ -67,8 +79,7 @@ def main():
             preconditions=[
                 true_strips_vars.contains(var) 
                 for var, pre, _, _ in action.pre_post 
-                if pre == 0
-            ],
+                if pre == 0],
             effects=[
                 (actions_used, actions_used.add(i))
             ] + [
@@ -86,25 +97,8 @@ def main():
     for i, action in enumerate(sas_task.operators):
         
         # TODO: try using state constraints to enforce preconditions?
-        
-        
-        '''needed_preconditions = [(var, pre) for var, pre, _, _ in action.pre_post if pre != -1]  # add preconditions
-        needed_preconditions.append((var, val) for var, val in action.prevail) # add prevail conditions
-        
-        current_vars = [(var, val) for var, val in zip(range(len(sas_task.variables.value_names)), sas_task.init.values)] # add initial state variable values
-        
-        # add all variables values which have been added by previous actions 
-        # workaround since we can't easily access the elements of a set variable -> ask on github?
-        for j in range (len(sas_task.operators)):
-            if actions_used.contains(j):
-                current_vars.append([(var, val) for var, val in sas_task.operators[j].pre_post])
-                
-        
-        #for j in actions_used:
-            #current_vars.append([(var, val) for var, _, val, _ in sas_task.operators[j].pre_post])'''
-        
-        '''model.add_state_constr(            
-            ~actions_used.contains(action) | ~current_vars.contains(pair) for pair in needed_preconditions
+        '''model.add_state_constr(
+            true_strips_vars.issuperset(action_preconditions[i])
         )'''
             
     
@@ -112,14 +106,15 @@ def main():
     # Solver
     #-------#
     solver = dp.CAASDy(model, time_limit=30)
-    solution = solver.search()
+    '''solution = solver.search()
 
     print("Transitions to apply:")
 
     for t in solution.transitions:
         print(t.name)
 
-    print("Cost: {}".format(solution.cost))
+    print("Cost: {}".format(solution.cost))'''
+    
 
 if __name__ == "__main__":
     main()
