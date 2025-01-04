@@ -41,6 +41,7 @@ def main():
     strips_var = model.add_object_type(number=len(sas_task.variables.value_names))
     true_strips_vars = model.add_set_var(object_type=strips_var, target=[i for i, var in enumerate(sas_task.variables.value_names) if sas_task.init.values[i] == 0])    # used to track which strips variables have accumulated
 
+    tmp_obj = model.add_object_type(number=len(sas_task.variables.value_names)) # used for effects in transitions
             
     state = model.target_state    
     
@@ -52,22 +53,21 @@ def main():
         action_costs.append(action.cost)
     cost_table = model.add_int_table(action_costs)
     
+    # testing - ignore
     # save the preconditions for all actions as set constants
     # ONLY SAVING PRECONDITIONS WHICH ARE POSITIVE (value 0)
-    all_preconditions = []
+    '''all_preconditions = []
     for action in sas_task.operators:
         preconditions = [var for var, pre, _, _ in action.pre_post if pre == 0]  # add preconditions
         preconditions.extend([var for var, val in action.prevail if val == 0])  # convert generator to list and extend
-        all_preconditions.append(preconditions)
-    #print(all_preconditions)
-    action_preconditions = model.add_int_table(all_preconditions)
-    print()
-    print(len(all_preconditions[]))
+        all_preconditions.append(preconditions)'''
+
+
 
     #-----------------#
     #   BASE CASES    #
     #-----------------#
-    model.add_base_case([true_strips_vars.contains(var) for var, val in sas_task.goal.pairs])
+    model.add_base_case([true_strips_vars.contains(var) for var, val in sas_task.goal.pairs if val == 0])   
     
     # ------------------#
     #    TRANSITIONS
@@ -79,12 +79,16 @@ def main():
             preconditions=[
                 true_strips_vars.contains(var) 
                 for var, pre, _, _ in action.pre_post 
-                if pre == 0],
+                if pre == 0
+            ] + [
+                true_strips_vars.contains(var) 
+                for var, val in action.prevail
+                if val == 0
+            ],
             effects=[
                 (actions_used, actions_used.add(i))
             ] + [
-                (true_strips_vars, true_strips_vars.add(var)) 
-                for var, _, val, _ in action.pre_post if val == 0
+                (true_strips_vars, true_strips_vars.union(model.create_set_const(object_type=tmp_obj, value=[var for var, _, val, _ in action.pre_post if val == 0])))
             ]
         )
         model.add_transition(transition)
@@ -94,7 +98,7 @@ def main():
     # ------------------#
     
     
-    for i, action in enumerate(sas_task.operators):
+    #for i, action in enumerate(sas_task.operators):
         
         # TODO: try using state constraints to enforce preconditions?
         '''model.add_state_constr(
@@ -102,18 +106,23 @@ def main():
         )'''
             
     
+    # ------------------#
+    #    DUAL BOUNDS    #
+    # ------------------#
+    model.add_dual_bound(0)
+    
     #-------#
     # Solver
     #-------#
-    solver = dp.CAASDy(model, time_limit=30)
-    '''solution = solver.search()
+    solver = dp.DFBB(model, time_limit=100)
+    solution = solver.search()
 
     print("Transitions to apply:")
 
     for t in solution.transitions:
         print(t.name)
 
-    print("Cost: {}".format(solution.cost))'''
+    print("Cost: {}".format(solution.cost))
     
 
 if __name__ == "__main__":
