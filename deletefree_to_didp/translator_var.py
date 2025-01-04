@@ -63,9 +63,6 @@ def main():
     #    TRANSITIONS
     # ------------------#
     for i, action in enumerate(sas_task.operators):
-        for var, val in action.prevail:
-            print("var: " + str(var))
-            print("val: " + str(val))
         transition = dp.Transition(
             name="transition {}".format(i),
             cost = cost_table[i] + dp.IntExpr.state_cost(),
@@ -83,6 +80,11 @@ def main():
         )
         model.add_transition(transition)
         
+        
+    # ------------------#
+    #    DUAL BOUNDS    #
+    # ------------------#
+    model.add_dual_bound(0)     # trivial dual bound which still increases performance
         
     #-------#
     # Solver
