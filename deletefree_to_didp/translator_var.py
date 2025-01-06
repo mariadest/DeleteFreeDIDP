@@ -41,6 +41,8 @@ def main():
     for i, var in enumerate(sas_task.variables.value_names):
         var = model.add_int_var(target=initial_state[i])
         dypdl_vars.append(var)
+        
+    fulfilled_goals = model.add_int_var(target = 0)     # used in the dual bound
     
     state = model.target_state  # used for debugging
         
@@ -84,12 +86,20 @@ def main():
     # ------------------#
     #    DUAL BOUNDS    #
     # ------------------#
-    model.add_dual_bound(0)     # trivial dual bound which still increases performance
-        
+    model.add_dual_bound(0)     # trivial dual bound - still increases performance
+
+    # dual bound which expresses nr of goals not fulfilled
+    fulfilled_goals = sum(
+        (dypdl_vars[var] == val).if_then_else(1, 0)
+        for var, val in sas_task.goal.pairs
+    )
+    model.add_dual_bound(len(sas_task.goal.pairs) - fulfilled_goals)
+
+    
     #-------#
     # Solver
     #-------#
-    solver = dp.DFBB(model, time_limit=30)
+    solver = dp.CAASDy(model, time_limit=300)
     solution = solver.search()
 
     print("Transitions to apply:")
