@@ -64,7 +64,7 @@ def main():
     # ------------------#
     for i, action in enumerate(sas_task.operators):
         transition = dp.Transition(
-            name=action.name,
+            name=str(i) +": " + str(action.name),
             cost = cost_table[i] + dp.IntExpr.state_cost(),
             preconditions=[
                 true_strips_vars.issuperset(model.create_set_const(object_type=tmp_obj, value = [var for var, pre, _, _ in action.pre_post if pre == 0]))
@@ -83,7 +83,7 @@ def main():
         
     for i, action in enumerate(sas_task.operators):
         transition = dp.Transition(
-            name = "ignore action: {}".format(action.name),
+            name = "ignore " + str(i) +": " + str(action.name),
             cost = 0,
             preconditions=[~actions_considered.contains(i)],
             effects=[(actions_considered, actions_considered.add(i))]

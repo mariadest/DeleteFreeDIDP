@@ -66,7 +66,7 @@ def main():
     # ------------------#
     for i, action in enumerate(sas_task.operators):
         transition = dp.Transition(
-            name=action.name,
+            name=str(i) +": " + str(action.name),
             cost = cost_table[i] + dp.IntExpr.state_cost(),
             preconditions=[
                 dypdl_vars[pre] == val              # prevail conditions
