@@ -99,7 +99,7 @@ def main():
     #-------#
     # Solver
     #-------#
-    solver = dp.CAASDy(model, time_limit=300)
+    solver = dp.CABS(model, time_limit=300)
     solution = solver.search()
 
     print("Transitions to apply:")

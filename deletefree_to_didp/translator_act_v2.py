@@ -80,16 +80,16 @@ def main():
             ]
         )
         model.add_transition(transition)
+
         
-    for i, action in enumerate(sas_task.operators):
-        transition = dp.Transition(
+        ignoreTransition = dp.Transition(
             name = "ignore " + str(i) +": " + str(action.name),
             cost = 0,
             preconditions=[~actions_considered.contains(i)],
-            effects=[(actions_considered, actions_considered.add(i))]
+            effects=[(actions_considered, actions_considered.add(i))] 
         )
-        model.add_transition(transition)
-        
+        model.add_transition(ignoreTransition)
+
     
     # ------------------#
     #    DUAL BOUNDS    #
@@ -105,7 +105,9 @@ def main():
     #-------#
     # Solver
     #-------#
-    solver = dp.DBDFS(model, time_limit=150)
+    # TODO: not working correctly currently, CAASDy can't seem to solve it if we use ignore actions
+    # CABS can solve it but gives wrong cost despite using correct actions
+    solver = dp.CAASDy(model, time_limit=10)
     solution = solver.search()
 
     print("Transitions to apply:")
