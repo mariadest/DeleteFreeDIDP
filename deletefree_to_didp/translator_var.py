@@ -1,4 +1,4 @@
-# Translator mapping STRIPS variables to DIDP variables
+# Translator mapping each STRIPS variable to a DIDP variable
 
 import sys
 import os
@@ -66,7 +66,7 @@ def main():
     # ------------------#
     for i, action in enumerate(sas_task.operators):
         transition = dp.Transition(
-            name="transition {}".format(i),
+            name=action.name,
             cost = cost_table[i] + dp.IntExpr.state_cost(),
             preconditions=[
                 dypdl_vars[pre] == val              # prevail conditions

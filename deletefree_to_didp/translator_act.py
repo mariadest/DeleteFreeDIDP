@@ -1,4 +1,4 @@
-# Translator mapping STRIPS actions to DIDP variables
+# Translator mapping all STRIPS variables to a single DyPDL set variable
 
 import sys
 import os
@@ -61,7 +61,7 @@ def main():
     # ------------------#
     for i, action in enumerate(sas_task.operators):
         transition = dp.Transition(
-            name="transitions {}".format(i),
+            name=action.name,
             cost = cost_table[i] + dp.IntExpr.state_cost(),
             preconditions=[
                 true_strips_vars.issuperset(model.create_set_const(object_type=tmp_obj, value = [var for var, pre, _, _ in action.pre_post if pre == 0]))
@@ -78,6 +78,12 @@ def main():
     #    DUAL BOUNDS    #
     # ------------------#
     model.add_dual_bound(0)
+    
+    fulfilled_goals = sum(
+        (true_strips_vars.contains(var)).if_then_else(1, 0)
+        for var, val in sas_task.goal.pairs if val == 0
+    )
+    model.add_dual_bound(len(sas_task.goal.pairs) - fulfilled_goals)
     
     #-------#
     # Solver
