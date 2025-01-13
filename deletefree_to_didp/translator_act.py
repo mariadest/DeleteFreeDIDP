@@ -38,7 +38,7 @@ def main():
     strips_var = model.add_object_type(number=len(sas_task.variables.value_names))
     true_strips_vars = model.add_set_var(object_type=strips_var, target=[i for i, var in enumerate(sas_task.variables.value_names) if sas_task.init.values[i] == 0])    # used to track which strips variables have accumulated
 
-    tmp_obj = model.add_object_type(number=len(sas_task.variables.value_names)) # used in transitions
+    variable = model.add_object_type(number=len(sas_task.variables.value_names)) # used in transitions
             
     state = model.target_state    
     
@@ -54,7 +54,7 @@ def main():
     #-----------------#
     #   BASE CASES    #
     #-----------------#
-    model.add_base_case([true_strips_vars.issuperset(model.create_set_const(object_type=tmp_obj, value = [var for var, val in sas_task.goal.pairs if val == 0]))])   
+    model.add_base_case([true_strips_vars.issuperset(model.create_set_const(object_type=variable, value = [var for var, val in sas_task.goal.pairs if val == 0]))])   
     
     # ------------------#
     #    TRANSITIONS
@@ -64,12 +64,14 @@ def main():
             name=str(i) +": " + str(action.name),
             cost = cost_table[i] + dp.IntExpr.state_cost(),
             preconditions=[
-                true_strips_vars.issuperset(model.create_set_const(object_type=tmp_obj, value = [var for var, pre, _, _ in action.pre_post if pre == 0]))
+                true_strips_vars.issuperset(model.create_set_const(object_type=variable, value = [var for var, pre, _, _ in action.pre_post if pre == 0]))
             ] + [
-                true_strips_vars.issuperset(model.create_set_const(object_type=tmp_obj, value = [var for var, val in action.prevail if val == 0])) 
+                true_strips_vars.issuperset(model.create_set_const(object_type=variable, value = [var for var, val in action.prevail if val == 0])) 
+            ] + [
+                ~model.create_set_const(object_type = variable, value = [var for var, _, val, _ in action.pre_post if val == 0]).issubset(true_strips_vars)
             ],
             effects=[
-                (true_strips_vars, true_strips_vars.union(model.create_set_const(object_type=tmp_obj, value=[var for var, _, val, _ in action.pre_post if val == 0])))
+                (true_strips_vars, true_strips_vars.union(model.create_set_const(object_type=variable, value=[var for var, _, val, _ in action.pre_post if val == 0])))
             ]
         )
         model.add_transition(transition)
