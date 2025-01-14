@@ -44,6 +44,8 @@ def main():
         
     fulfilled_goals = model.add_int_var(target = 0)     # used in the dual bound
     
+    variable = model.add_object_type(number=len(sas_task.variables.value_names)) # used in transitions
+
     state = model.target_state  # used for debugging
         
     #---------------#
@@ -74,6 +76,11 @@ def main():
             ] + [
                 dypdl_vars[pre] == val              # preconditions
                 for pre, val, _, _ in action.pre_post if val != -1
+            ] + [
+                sum(
+                    (dypdl_vars[var] != val).if_then_else(1, 0)
+                    for var, _, val, _ in action.pre_post
+                ) > 0
             ],
             effects=[
                 (dypdl_vars[var], val)
@@ -99,7 +106,7 @@ def main():
     #-------#
     # Solver
     #-------#
-    solver = dp.CABS(model, time_limit=300)
+    solver = dp.CAASDy(model, time_limit=300)
     solution = solver.search()
 
     print("Transitions to apply:")

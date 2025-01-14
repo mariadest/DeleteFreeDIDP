@@ -1,8 +1,7 @@
-# Translator mapping all STRIPS variables to a single DyPDL variable and keeping track of actions used
+# Translator mapping each STRIPS variable to a DIDP variable
 
 import sys
 import os
-import math
 
 # Add the third_party directory to sys.path 
 sys.path.append(os.path.join(os.path.dirname(__file__), "third_party"))
@@ -30,22 +29,26 @@ def main():
     sas_task = translate.pddl_to_sas(task)
     
     # building dypdl task from here on out
-    # NOTE: While we use 0 as the default value for negated variables, SAS+ (and therefore this translator) use 1 instead
+    # NOTE: While we use 0 as the default value for negated variables, SAS+ (and this translator) use 1 instead
     model = dp.Model()
     
     #----------------#
     #   VARIABLES    #
     #----------------#
+    initial_state = (sas_task.init.values)
+    dypdl_vars = []     # store all dydpl variables for later access
+    
+    for i, var in enumerate(sas_task.variables.value_names):
+        var = model.add_int_var(target=initial_state[i])
+        dypdl_vars.append(var)
+        
+    fulfilled_goals = model.add_int_var(target = 0)     # used in the dual bound
+    
     action = model.add_object_type(number=len(sas_task.operators))
     actions_considered = model.add_set_var(object_type=action, target=[])
     
-    strips_var = model.add_object_type(number=len(sas_task.variables.value_names))
-    true_strips_vars = model.add_set_var(object_type=strips_var, target=[i for i, var in enumerate(sas_task.variables.value_names) if sas_task.init.values[i] == 0])    # used to track which strips variables have accumulated
-
-    variable = model.add_object_type(number=len(sas_task.variables.value_names)) # used in transitions
-            
-    state = model.target_state    
-    
+    state = model.target_state  # used for debugging
+        
     #---------------#
     #   CONSTANTS   #
     #---------------#
@@ -53,13 +56,13 @@ def main():
     for action in sas_task.operators:
         action_costs.append(action.cost)
     cost_table = model.add_int_table(action_costs)
-
-
+    
+    
     #-----------------#
     #   BASE CASES    #
     #-----------------#
-    model.add_base_case([true_strips_vars.issuperset(model.create_set_const(object_type=variable, value = [var for var, val in sas_task.goal.pairs if val == 0]))])   
-    model.add_base_case([actions_considered.contains(i) for i in range (len(sas_task.operators))], cost = math.inf)
+    model.add_base_case([dypdl_vars[var] == val for var,val in sas_task.goal.pairs])    
+    
     
     # ------------------#
     #    TRANSITIONS
@@ -69,54 +72,55 @@ def main():
             name=str(i) +": " + str(action.name),
             cost = cost_table[i] + dp.IntExpr.state_cost(),
             preconditions=[
-                true_strips_vars.issuperset(model.create_set_const(object_type=variable, value = [var for var, pre, _, _ in action.pre_post if pre == 0]))
+                dypdl_vars[pre] == val              # prevail conditions
+                for pre, val in action.prevail
             ] + [
-                true_strips_vars.issuperset(model.create_set_const(object_type=variable, value = [var for var, val in action.prevail if val == 0])) 
+                dypdl_vars[pre] == val              # preconditions
+                for pre, val, _, _ in action.pre_post if val != -1
             ] + [
                 ~actions_considered.contains(i)
+            ] + [
+                sum(
+                    (dypdl_vars[var] != val).if_then_else(1, 0)
+                    for var, _, val, _ in action.pre_post
+                ) > 0
             ],
             effects=[
-                (true_strips_vars, true_strips_vars.union(model.create_set_const(object_type=variable, value=[var for var, _, val, _ in action.pre_post if val == 0])))
+                (dypdl_vars[var], val)
+                for var, _, val, _ in action.pre_post
             ] + [
                 (actions_considered, actions_considered.add(i))
             ]
         )
         model.add_transition(transition)
-
         
-        # ignoring actions which don't lead to new true variables
+        
         ignoreTransition = dp.Transition(
             name = "ignore " + str(i) +": " + str(action.name),
-            cost = dp.IntExpr.state_cost(),
-            preconditions=[
-                ~actions_considered.contains(i)
-            ] + [
-                model.create_set_const(object_type = variable, value = [var for var, _, val, _ in action.pre_post if val == 0]).issubset(true_strips_vars)
-            ]+ [
-                ~model.create_set_const(object_type = variable, value = [var for var, _, val, _ in action.pre_post if val == 0]).issubset(true_strips_vars)
-            ],
+            cost = 0,
+            preconditions=[~actions_considered.contains(i)],
             effects=[(actions_considered, actions_considered.add(i))] 
         )
         model.add_transition(ignoreTransition)
-
-    
+        
+        
     # ------------------#
     #    DUAL BOUNDS    #
     # ------------------#
-    model.add_dual_bound(0)
-    
+    model.add_dual_bound(0)     # trivial dual bound - still increases performance
+
+    # dual bound which expresses nr of goals not fulfilled
     fulfilled_goals = sum(
-        (true_strips_vars.contains(var)).if_then_else(1, 0)
-        for var, val in sas_task.goal.pairs if val == 0
+        (dypdl_vars[var] == val).if_then_else(1, 0)
+        for var, val in sas_task.goal.pairs
     )
     model.add_dual_bound(len(sas_task.goal.pairs) - fulfilled_goals)
+
     
     #-------#
     # Solver
     #-------#
-    # TODO: not working correctly currently, CAASDy can't seem to solve it if we use ignore actions
-    # CABS can solve it but gives wrong cost despite using correct actions
-    solver = dp.CAASDy(model, time_limit=10)
+    solver = dp.CAASDy(model, time_limit=300)
     solution = solver.search()
 
     print("Transitions to apply:")
@@ -125,7 +129,6 @@ def main():
         print(t.name)
 
     print("Cost: {}".format(solution.cost))
-    
 
 if __name__ == "__main__":
     main()
