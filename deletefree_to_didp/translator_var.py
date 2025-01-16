@@ -2,21 +2,37 @@
 
 import sys
 import os
+import argparse
 
 # Add the third_party directory to sys.path 
 sys.path.append(os.path.join(os.path.dirname(__file__), "third_party"))
 
+# used to "overwrite" argparse arguments
+original_argv = sys.argv
+sys.argv = sys.argv[:3]
+
 import third_party.pddl_parser.pddl_file as pddl_parsing
-import third_party.options as options
 import third_party.normalize as normalize
 import third_party.translate as translate
 import didppy as dp
 
+
+sys.argv = original_argv
+
+parser = argparse.ArgumentParser()
+parser.add_argument("domainFile", help="path to domain.pddl")
+parser.add_argument("problemFile", help="path to problem.pddl")
+# parser.add_argument("mappingType", help="choose between using int or set variables", choices=["int", "set"])
+parser.add_argument("-z", "--zeroHeuristic", help="use the zero heuristic", action="store_true")
+parser.add_argument("-g", "--goalHeuristic", help="use the goal heuristic", action="store_true")
+
+args = parser.parse_args()
+
 # It's assumed that all variables have 2 values -> #TODO: add check?
 def main():
     task = pddl_parsing.open(
-         domain_filename=options.domain, task_filename=options.task)
-     
+        domain_filename=args.domainFile, task_filename=args.problemFile)
+    
     normalize.normalize(task)
     
     # removing delete effects
@@ -93,15 +109,18 @@ def main():
     # ------------------#
     #    DUAL BOUNDS    #
     # ------------------#
-    model.add_dual_bound(0)     # trivial dual bound - still increases performance
+    if args.zeroHeuristic:
+        model.add_dual_bound(0)     # trivial dual bound - still increases performance
 
     # dual bound which expresses nr of goals not fulfilled
-    fulfilled_goals = sum(
-        (dypdl_vars[var] == val).if_then_else(1, 0)
-        for var, val in sas_task.goal.pairs
-    )
-    model.add_dual_bound(len(sas_task.goal.pairs) - fulfilled_goals)
+    if args.goalHeuristic:
+        max_var_count = max(len({var for var, _, val, _ in action.pre_post}) for action in sas_task.operators)
 
+        fulfilled_goals = sum(
+            (dypdl_vars[var] == val).if_then_else(1, 0)
+            for var, val in sas_task.goal.pairs
+        )
+        model.add_dual_bound((len(sas_task.goal.pairs) - fulfilled_goals) / max_var_count)
     
     #-------#
     # Solver
