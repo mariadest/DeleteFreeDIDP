@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser.add_argument("-zh", "--zero_heuristic", help="Use the zero heuristic", action="store_true")
     parser.add_argument("-gh", "--goal_heuristic", help="Use the goal heuristic", action="store_true")
     parser.add_argument("-t", "--track_actions", help="Use the modification which tracks actions", action="store_true")
-    parser.add_argument("-i", "ignore_actions", help="Ignore actions whose effects do not add any new variable values")
+    parser.add_argument("-i", "--ignore_actions", help="Ignore actions whose effects do not add any new variable values", action="store_true")
 
     args = parser.parse_args()
     domain_file = args.domain
