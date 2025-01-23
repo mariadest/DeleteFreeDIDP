@@ -13,7 +13,7 @@ import didppy as dp
 import math
 
 # It's assumed that all variables have 2 values -> #TODO: add check?
-def mapping(domain_file, problem_file, zero_heuristic, goal_heuristic, track_actions, ignore_actions):
+def mapping(domain_file, problem_file, zero_heuristic, goal_heuristic, ignore_actions):
     task = pddl_parsing.open(
          domain_filename=domain_file, task_filename=problem_file)
      
@@ -39,10 +39,6 @@ def mapping(domain_file, problem_file, zero_heuristic, goal_heuristic, track_act
     true_strips_vars = model.add_set_var(object_type=strips_var, target=[i for i, var in enumerate(sas_task.variables.value_names) if sas_task.init.values[i] == 0])    # used to track which strips variables have accumulated
 
     variable = model.add_object_type(number=len(sas_task.variables.value_names)) # used in transitions
-            
-    if track_actions:
-        action = model.add_object_type(number=len(sas_task.operators))
-        actions_considered = model.add_set_var(object_type=action, target=[])
     
     #---------------#
     #   CONSTANTS   #
@@ -57,8 +53,6 @@ def mapping(domain_file, problem_file, zero_heuristic, goal_heuristic, track_act
     #   BASE CASES    #
     #-----------------#
     model.add_base_case([true_strips_vars.issuperset(model.create_set_const(object_type=variable, value = [var for var, val in sas_task.goal.pairs if val == 0]))])   
-    if track_actions:
-        model.add_base_case([actions_considered.contains(i) for i in range (len(sas_task.operators))], cost = math.inf)
 
     
     # ------------------#

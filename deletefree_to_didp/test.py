@@ -8,7 +8,6 @@ from lab.experiment import Experiment
 from lab.parser import Parser
 from lab.environments import BaselSlurmEnvironment, LocalEnvironment
 from downward.reports.absolute import AbsoluteReport
-from lab.reports import Attribute
 
 from downward import suites
 
@@ -31,7 +30,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BENCHMARKS_DIR = "third_party/benchmarks"
 
 TIME_LIMIT = 1800
-MEMORY_LIMIT = 2048
+MEMORY_LIMIT = 20480
 
 if REMOTE:
     ENV = BaselSlurmEnvironment(email="maria.desteffani@unibas.ch")
@@ -40,15 +39,29 @@ else:
     
 ATTRIBUTES = [
     "cost",
-    #"error",
-    #"solve_time",
+    "solve_time",
+    "error",
     "solver_exit_code",
-    #Attribute("solved", absolute=True),
 ]
 
-ALGORITHMS = {
+'''ALGORITHMS = {
     "baseline_int": ["int"],
     "baseline_set": ["set"],
+    "int_zero" : ["int", "-zh"],
+    "set_zero" : ["set", "-zh"],
+    "int_goal" : ["int" , "-gh"],
+    "set_goal" : ["set", "-gh"],
+    "int_zero_goal" : ["int", "-zh", "-gh"],
+    "set_zero_goal" : ["set", "-zh", "-gh"],
+    "int_zero_goal_ignore" : ["int", "-zh", "-gh", "-i"],
+    "set_zero_goal_ignore" : ["set", "-zh", "-gh", "-i"]
+}'''
+
+ALGORITHMS = {
+    "int_baseline" : ["int", "-zh"],
+    "int_track" : ["int", "-zh", "-t"],
+    "set_baseline" : ["set", "-zh"],
+    "set_track" : ["set", "-zh", "-t"],
 }
 
 def make_parser():
@@ -66,7 +79,8 @@ def make_parser():
         type=int, 
         file="driver.log"
     )
-    
+    parser.add_pattern("cost", r"cost: (\d+)", type = int)
+    parser.add_pattern("solve_time", r"Solve time: (.+)s", type=float)    
     return parser
 
 # Create the experiment
@@ -86,7 +100,7 @@ strips_tasks = ["blocks"]
 benchmarks = suites.build_suite(BENCHMARKS_DIR, strips_tasks)
 
 for algo, options in ALGORITHMS.items():
-    for benchmark in benchmarks[:2]:
+    for benchmark in benchmarks[:4]:        # CHANGE BENCHMARKS HERE: currently only the first 5 blocks tasks run
         domain_file = benchmark.domain_file
         problem_file = benchmark.problem_file
         

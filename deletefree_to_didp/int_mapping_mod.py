@@ -2,7 +2,6 @@
 
 import sys
 import os
-import argparse
 
 # Add the third_party directory to sys.path 
 sys.path.append(os.path.join(os.path.dirname(__file__), "third_party"))
@@ -14,7 +13,7 @@ import didppy as dp
 
 
 # It's assumed that all variables have 2 values -> #TODO: add check?
-def mapping(domain_file, problem_file, zero_heuristic, goal_heuristic, track_actions, ignore_actions):
+def mapping(domain_file, problem_file, zero_heuristic, goal_heuristic, ignore_actions):
     task = pddl_parsing.open(
         domain_filename=domain_file, task_filename=problem_file)
     
@@ -47,6 +46,8 @@ def mapping(domain_file, problem_file, zero_heuristic, goal_heuristic, track_act
         
     action = model.add_object_type(number=len(sas_task.operators))
     actions_considered = model.add_set_var(object_type=action, target=[])
+    
+    forced_action = model.add_int_var(target=-1)    # tracks which action is currently forced
             
                     
     #---------------#
@@ -67,68 +68,82 @@ def mapping(domain_file, problem_file, zero_heuristic, goal_heuristic, track_act
     # ------------------#
     #    TRANSITIONS
     # ------------------#
+    # There is a forced transition for every action which "forces" it
+    # Once "forced" an action will either be 
+    #   (a): ignored
+    #   (b): applied 
+    # afterwards the action is marked as "considered" and cannot be forced again
     for i, action in enumerate(sas_task.operators):
-        if ignore_actions:  
-            transition = dp.Transition(
-                name=str(i) +": " + str(action.name),
-                cost = cost_table[i] + dp.IntExpr.state_cost(),
-                preconditions=[
+        if ignore_actions:
+            force_transition = dp.Transition(
+                name = "forcing action nr " + str(i) + ": " + str(action.name),
+                cost = dp.IntExpr.state_cost(),     # free
+                preconditions = [
+                    ~actions_considered.contains(i)     # action not yet considered
+                ] + [
                     dypdl_vars[pre] == val              # prevail conditions
                     for pre, val in action.prevail
                 ] + [
                     dypdl_vars[pre] == val              # preconditions
                     for pre, val, _, _ in action.pre_post if val != -1
                 ] + [
-                    ~actions_considered.contains(i)
+                    forced_action == -1     # no other action is being enforced curently
                 ] + [
                     sum(
                         (dypdl_vars[var] != val).if_then_else(1, 0)
                         for var, _, val, _ in action.pre_post
                     ) > 0
-                ],
-                effects=[
-                    (dypdl_vars[var], val)
-                    for var, _, val, _ in action.pre_post
-                ] + [
-                    (actions_considered, actions_considered.add(i))
-                ]
+                ],      
+                effects = [(forced_action, i)]      # "force" action i
             )
         else:
-            transition = dp.Transition(
-                name=str(i) +": " + str(action.name),
-                cost = cost_table[i] + dp.IntExpr.state_cost(),
-                preconditions=[
+            force_transition = dp.Transition(
+                name = "forcing action nr " + str(i) + ": " + str(action.name),
+                cost = dp.IntExpr.state_cost(),     # free
+                preconditions = [
+                    ~actions_considered.contains(i)     # action not yet considered; technically not needed as we have forced transitions
+                ] + [
                     dypdl_vars[pre] == val              # prevail conditions
                     for pre, val in action.prevail
                 ] + [
                     dypdl_vars[pre] == val              # preconditions
                     for pre, val, _, _ in action.pre_post if val != -1
                 ] + [
-                    ~actions_considered.contains(i)
-                ],
-                effects=[
-                    (dypdl_vars[var], val)
-                    for var, _, val, _ in action.pre_post
-                ] + [
-                    (actions_considered, actions_considered.add(i))
-                ]
-            )
-            
-        model.add_transition(transition)
+                    forced_action == -1     # no other action is being enforced curently
+                ],      
+                effects = [(forced_action, i)]      # "activate" action
+            ) 
+        model.add_transition(force_transition, forced=True)   # add forced transition
+    
+        use_transition = dp.Transition(
+            name = str(i) +": " + str(action.name),
+            cost = cost_table[i] + dp.IntExpr.state_cost(),
+            preconditions=[
+                forced_action == i      # action needs to be marked as "forced"
+            ],
+            effects=[
+                (dypdl_vars[var], val)
+                for var, _, val, _ in action.pre_post
+            ] + [
+                (actions_considered, actions_considered.add(i)),
+                (forced_action, -1)     # transition is no longer forced -> new action can be forced
+            ]
+        )
+        model.add_transition(use_transition)
         
-        ignoreTransition = dp.Transition(
+        ignore_transition = dp.Transition(
             name = "ignore " + str(i) +": " + str(action.name),
             cost = dp.IntExpr.state_cost(),
             preconditions=[
-                ~actions_considered.contains(i)
-            ] + [
-                (dypdl_vars[var] == val)
-                for var, _, val, _ in action.pre_post
+                forced_action == i
             ],
-            effects=[(actions_considered, actions_considered.add(i))] 
+            effects=[
+                (actions_considered, actions_considered.add(i)),
+                (forced_action, -1)     # transition is no longer forced -> new action can be forced
+            ]
         )
-        model.add_transition(ignoreTransition)
-        
+        model.add_transition(ignore_transition)
+
         
     # ------------------#
     #    DUAL BOUNDS    #

@@ -10,8 +10,8 @@ if __name__ == "__main__":
     parser.add_argument("mapping_type", choices=["int", "set"], help="Type of mapping to use")
     parser.add_argument("-zh", "--zero_heuristic", help="Use the zero heuristic", action="store_true")
     parser.add_argument("-gh", "--goal_heuristic", help="Use the goal heuristic", action="store_true")
-    parser.add_argument("-t", "--track_actions", help="Use the modification which tracks actions", action="store_true")
-    parser.add_argument("-i", "--ignore_actions", help="Ignore actions whose effects do not add any new variable values", action="store_true")
+    parser.add_argument("-t", "--track_actions", help="Use the modification which forces and tracks actions", action="store_true")
+    parser.add_argument("-i", "--ignore_actions", help="Add precondition which ignores actions whose effects do not add any new variable values", action="store_true")
 
     args = parser.parse_args()
     domain_file = args.domain
@@ -38,11 +38,11 @@ if __name__ == "__main__":
         if track_actions:
             model = set_mapping_mod.mapping(domain_file, problem_file, zero_heuristic, goal_heuristic, ignore_actions)
         else:
-            model = set_mapping.mapping(domain_file, problem_file, zero_heuristic, goal_heuristic, track_actions, ignore_actions)
+            model = set_mapping.mapping(domain_file, problem_file, zero_heuristic, goal_heuristic, ignore_actions)
     
     
     # solving
-    solver = dp.CAASDy(model, time_limit=300)
+    solver = dp.CAASDy(model)
     solution = solver.search()
 
     print("Transitions to apply:")
@@ -50,4 +50,5 @@ if __name__ == "__main__":
     for t in solution.transitions:
         print(t.name)
 
-    print("Cost: {}".format(solution.cost))
+    print(f"cost: {solution.cost}")
+    print(f"Solve time: {solution.time}s")
