@@ -3,6 +3,7 @@
 import os
 import platform
 import sys
+from pathlib import Path
 
 from lab.experiment import Experiment
 from lab.parser import Parser
@@ -26,11 +27,12 @@ class BaseReport(AbsoluteReport):
 NODE = platform.node()
 REMOTE = NODE.endswith(".scicore.unibas.ch") or NODE.endswith(".cluster.bc2.ch")
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-BENCHMARKS_DIR = "third_party/benchmarks"
+SCRIPT_DIR = Path(__file__).parent
+REPO_DIR = SCRIPT_DIR.parent
+BENCHMARKS_DIR = REPO_DIR / "benchmarks"
 
 TIME_LIMIT = 1800
-MEMORY_LIMIT = 20480
+MEMORY_LIMIT = 3584
 
 if REMOTE:
     ENV = BaselSlurmEnvironment(email="maria.desteffani@unibas.ch")
@@ -85,12 +87,13 @@ def make_parser():
 
 # Create the experiment
 exp = Experiment(environment=ENV)
-exp.add_resource("solver", os.path.join(SCRIPT_DIR, "main.py"))
+'''exp.add_resource("solver", os.path.join(SCRIPT_DIR, "main.py"))
 exp.add_resource("int_mapping", os.path.join(SCRIPT_DIR, "int_mapping.py"), symlink=True)
 exp.add_resource("set_mapping", os.path.join(SCRIPT_DIR, "set_mapping.py"), symlink=True)
 exp.add_resource("third_party", os.path.join(SCRIPT_DIR, "third_party"), symlink=True)
 exp.add_resource("int_mapping_mod", os.path.join(SCRIPT_DIR, "int_mapping_mod.py"), symlink=True)
-exp.add_resource("set_mapping_mod", os.path.join(SCRIPT_DIR, "set_mapping_mod.py"), symlink=True)
+exp.add_resource("set_mapping_mod", os.path.join(SCRIPT_DIR, "set_mapping_mod.py"), symlink=True)'''
+exp.add_resource("solver", REPO_DIR/"src")
 
 exp.add_parser(make_parser())
 
@@ -100,7 +103,7 @@ strips_tasks = ["blocks"]
 benchmarks = suites.build_suite(BENCHMARKS_DIR, strips_tasks)
 
 for algo, options in ALGORITHMS.items():
-    for benchmark in benchmarks[:4]:        # CHANGE BENCHMARKS HERE: currently only the first 5 blocks tasks run
+    for benchmark in benchmarks[:2]:        # CHANGE BENCHMARKS HERE: currently only the first 5 blocks tasks run
         domain_file = benchmark.domain_file
         problem_file = benchmark.problem_file
         
@@ -111,7 +114,7 @@ for algo, options in ALGORITHMS.items():
         
         run.add_command(
             "solve",
-            [sys.executable, "{solver}", "{domain}", "{problem}"] + options,
+            [sys.executable, "{solver}/main.py", "{domain}", "{problem}"] + options,
             time_limit=TIME_LIMIT,
             memory_limit=MEMORY_LIMIT
         )
@@ -121,6 +124,7 @@ for algo, options in ALGORITHMS.items():
         run.set_property("domain", domain)
         run.set_property("problem", task_name)
         run.set_property("algorithm", algo)
+        run.set_property("options", options)
         
         run.set_property("time_limit", TIME_LIMIT)
         run.set_property("memory_limit", MEMORY_LIMIT)
