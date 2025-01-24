@@ -29,7 +29,7 @@ REMOTE = NODE.endswith(".scicore.unibas.ch") or NODE.endswith(".cluster.bc2.ch")
 
 SCRIPT_DIR = Path(__file__).parent
 REPO_DIR = SCRIPT_DIR.parent
-BENCHMARKS_DIR = REPO_DIR / "benchmarks"
+BENCHMARKS_DIR = Path(os.environ["DOWNWARD_BENCHMARKS"])
 
 TIME_LIMIT = 1800
 MEMORY_LIMIT = 3584
