@@ -1,16 +1,23 @@
-import didppy as dp
+#! /usr/bin/env python
 
-model = dp.Model()
+import argparse 
+from pathlib import Path
+import random
 
-obj = model.add_object_type(number=4)
+parser = argparse.ArgumentParser()
+parser.add_argument("--seed")
+parser.add_argument("filename") 
+parser.add_argument("--mod1", action="store_true") 
+parser.add_argument("--mod2", action="store_true")
+args = parser.parse_args() 
 
-var = model.add_set_var(object_type=obj, target=[])
+print(f"calling solver with seed {args.seed}")
+if args.mod1: 
+    print("with mod 1")
 
-const = model.create_set_const(object_type=obj, value=[1, 2])
+if args.mod2:
+    print("with mod 2")
+    
+print(Path(args.filename).read_text())
 
-state = model.target_state
-
-var.add(1)
-
-print(var.contains(1).eval(state, model))
-
+print(f"cost: {random.randint(0, 10)}")
