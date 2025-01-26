@@ -35,7 +35,7 @@ TIME_LIMIT = 1800
 MEMORY_LIMIT = 3584
 
 if REMOTE:
-    ENV = BaselSlurmEnvironment(email="maria.desteffani@unibas.ch")
+    ENV = BaselSlurmEnvironment(email="maria.desteffani@unibas.ch", partition="infai_2")
 else:
     ENV = LocalEnvironment(processes=2)
     
