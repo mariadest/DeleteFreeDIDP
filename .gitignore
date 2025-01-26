@@ -1,7 +1,7 @@
 # Created by https://www.toptal.com/developers/gitignore/api/python
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 
-deletefree_to_didp/experiments/data/
+experiments/data/
 misc/
 
 ### Python ###
