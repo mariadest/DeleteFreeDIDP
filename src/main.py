@@ -50,5 +50,10 @@ if __name__ == "__main__":
     for t in solution.transitions:
         print(t.name)
 
+    print(f"solved")
     print(f"cost: {solution.cost}")
-    print(f"Solve time: {solution.time}s")
+    print(f"solve time: {solution.time}s")
+    print(f"nodes generated: {solution.generated}")
+    print(f"nodes expanded: {solution.expanded}")
+    
+    sys.stdout.flush()  # flush output stream
