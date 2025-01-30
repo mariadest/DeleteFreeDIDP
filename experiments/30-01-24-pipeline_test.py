@@ -55,10 +55,12 @@ ATTRIBUTES = [
 ]
 
 ALGORITHMS = {
-    "int_baseline" : ["int", "-zh"],
-    "int_track" : ["int", "-zh", "-t"],
-    "set_baseline" : ["set", "-zh"],
-    "set_track" : ["set", "-zh", "-t"],
+    "int_baseline" : ["int"],
+    "int_zero" : ["int", "-zh"],
+    "int_goal" : ["int", "-gh"],
+    "set_baseline" : ["set"],
+    "set_zero" : ["set", "-zh"],
+    "set_goal" : ["set", "-gh"]
 }
 
 def make_parser():
