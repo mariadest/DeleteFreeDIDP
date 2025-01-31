@@ -58,13 +58,15 @@ ATTRIBUTES = [
 ]
 
 ALGORITHMS = {
+    "int_baseline" : ["int"],
+    "int_zero" : ["int", "-zh"],
     "int_goal" : ["int", "-gh"],
 }
 
 def make_parser():
     parser = Parser()
     parser.add_pattern("finished", r"finished: (True|False)", type=bool)
-    parser.add_pattern("unsolvable", r"unsolvable: (True|False)", type=bool)
+    parser.add_pattern("unsolvable", r"(Generating unsolvable task)", type=bool)
     parser.add_pattern("cost", r"cost: (\d+)", type = int)
     parser.add_pattern("solve_time", r"solve time: (.+)s", type=float)
     parser.add_pattern("generated_nodes", r"nodes generated: (\d+)", type=int)
@@ -93,9 +95,8 @@ exp.add_parser(make_parser())
 # benchmarks = suites.build_suite(BENCHMARKS_DIR, strips_tasks)
 benchmarks = suites.build_suite(BENCHMARKS_DIR, strips_tasks)
 
-ind = [0, 6, 17]
 for algo, options in ALGORITHMS.items():
-    for benchmark in (benchmarks[i] for i in ind):        
+    for benchmark in benchmarks:        
         domain_file = benchmark.domain_file
         problem_file = benchmark.problem_file
         
