@@ -32,56 +32,62 @@ if __name__ == "__main__":
     import third_party.normalize as normalize
     import third_party.translate as translate
     
-    # creating sas task
-    task = pddl_parsing.open(
-        domain_filename=domain_file, task_filename=problem_file)
+    try:
+        # creating sas task
+        task = pddl_parsing.open(
+            domain_filename=domain_file, task_filename=problem_file)
+        
+        normalize.normalize(task)
+        # removing delete effects
+        for action in task.actions:
+            for index, effect in reversed(list(enumerate(action.effects))):
+                if effect.literal.negated:
+                    del action.effects[index]
+        sas_task = translate.pddl_to_sas(task)
+    except MemoryError:
+        print("MemoryError: failed creating SAS task")
     
-    normalize.normalize(task)
-    
-    # removing delete effects
-    for action in task.actions:
-        for index, effect in reversed(list(enumerate(action.effects))):
-            if effect.literal.negated:
-                del action.effects[index]
-    
-    
-    sas_task = translate.pddl_to_sas(task)
     
     # check if task is unsolvable by checking if downward created a trivial unsolvable task
     if sas_task.goal.pairs == [(0, 1)]:
         print(f"unsolvable: " +  str(True))
         print(f"finished: " + str(True))
     else: 
-        # choose model
-        if mapping_type == "int":
-            import int_mapping
-            import int_mapping_mod
-            if track_actions:
-                model = int_mapping_mod.mapping(sas_task, zero_heuristic, goal_heuristic, ignore_actions)
-            else:
-                model = int_mapping.mapping(sas_task, zero_heuristic, goal_heuristic, ignore_actions)
-        elif mapping_type == "set":
-            import set_mapping
-            import set_mapping_mod
-            if track_actions:
-                model = set_mapping_mod.mapping(sas_task, zero_heuristic, goal_heuristic, ignore_actions)
-            else:
-                model = set_mapping.mapping(sas_task, zero_heuristic, goal_heuristic, ignore_actions)
+        try:
+            # choose model
+            if mapping_type == "int":
+                import int_mapping
+                import int_mapping_mod
+                if track_actions:
+                    model = int_mapping_mod.mapping(sas_task, zero_heuristic, goal_heuristic, ignore_actions)
+                else:
+                    model = int_mapping.mapping(sas_task, zero_heuristic, goal_heuristic, ignore_actions)
+            elif mapping_type == "set":
+                import set_mapping
+                import set_mapping_mod
+                if track_actions:
+                    model = set_mapping_mod.mapping(sas_task, zero_heuristic, goal_heuristic, ignore_actions)
+                else:
+                    model = set_mapping.mapping(sas_task, zero_heuristic, goal_heuristic, ignore_actions)
+        except MemoryError:
+            print("MemoryError: failed creating model")
         
-        
-        # solving
-        solver = dp.CAASDy(model)
-        solution = solver.search()
+        try:
+            # solving
+            solver = dp.CAASDy(model)
+            solution = solver.search()
 
-        print("Transitions to apply:")
+            print("Transitions to apply:")
 
-        for t in solution.transitions:
-            print(t.name)
-        
-        print(f"finished: " + str(True))
-        print(f"cost: {solution.cost}")
-        print(f"solve time: {solution.time}s")
-        print(f"nodes generated: {solution.generated}")
-        print(f"nodes expanded: {solution.expanded}")
+            for t in solution.transitions:
+                print(t.name)
+            
+            print(f"finished: " + str(True))
+            print(f"cost: {solution.cost}")
+            print(f"solve time: {solution.time}s")
+            print(f"nodes generated: {solution.generated}")
+            print(f"nodes expanded: {solution.expanded}")
+        except MemoryError:
+            print("MemoryError: failed solving")
         
     sys.stdout.flush()  # flush output stream
