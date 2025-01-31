@@ -1,35 +1,9 @@
 # Translator mapping each STRIPS variable to a DIDP variable
-
-import sys
-import os
-
-# Add the third_party directory to sys.path 
-sys.path.append(os.path.join(os.path.dirname(__file__), "third_party"))
-
-import third_party.pddl_parser.pddl_file as pddl_parsing
-import third_party.normalize as normalize
-import third_party.translate as translate
 import didppy as dp
 
 
 # It's assumed that all variables have 2 values -> #TODO: add check?
-def mapping(domain_file, problem_file, zero_heuristic, goal_heuristic, ignore_actions):
-    task = pddl_parsing.open(
-        domain_filename=domain_file, task_filename=problem_file)
-    
-    normalize.normalize(task)
-    
-    # removing delete effects
-    for action in task.actions:
-        for index, effect in reversed(list(enumerate(action.effects))):
-            if effect.literal.negated:
-                del action.effects[index]
-    
-    
-    sas_task = translate.pddl_to_sas(task)
-    
-    
-    # building dypdl task from here on out
+def mapping(sas_task, zero_heuristic, goal_heuristic, ignore_actions):
     # NOTE: While we use 0 as the default value for negated variables, SAS+ (and this translator) use 1 instead
     model = dp.Model()
     

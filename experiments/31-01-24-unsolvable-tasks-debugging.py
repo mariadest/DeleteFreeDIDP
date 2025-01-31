@@ -47,7 +47,7 @@ else:
     
     
 ATTRIBUTES = [
-    "solved",
+    "finished",
     "unsolvable",
     "cost",
     "solve_time",
@@ -63,7 +63,7 @@ ALGORITHMS = {
 
 def make_parser():
     parser = Parser()
-    parser.add_pattern("solved", r"solve time: (.+)s", type=bool)
+    parser.add_pattern("finished", r"finished: (True|False)", type=bool)
     parser.add_pattern("unsolvable", r"unsolvable: (True|False)", type=bool)
     parser.add_pattern("cost", r"cost: (\d+)", type = int)
     parser.add_pattern("solve_time", r"solve time: (.+)s", type=float)
