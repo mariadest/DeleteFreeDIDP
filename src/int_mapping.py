@@ -29,6 +29,11 @@ def mapping(domain_file, problem_file, zero_heuristic, goal_heuristic, ignore_ac
     
     sas_task = translate.pddl_to_sas(task)
     
+    # check if task is unsolvable by checking if downward created a trivial unsolvable task
+    if sas_task.goal.pairs == [(0, 1)]:
+        "unsolvable task"
+        return None
+    
     
     # building dypdl task from here on out
     # NOTE: While we use 0 as the default value for negated variables, SAS+ (and this translator) use 1 instead

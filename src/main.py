@@ -42,18 +42,22 @@ if __name__ == "__main__":
     
     
     # solving
-    solver = dp.CAASDy(model)
-    solution = solver.search()
+    if(model == None):
+        print(f"unsolvable: " +  str(True))
+        print(f"solved: " + str(True))
+    else: 
+        solver = dp.CAASDy(model)
+        solution = solver.search()
 
-    print("Transitions to apply:")
+        print("Transitions to apply:")
 
-    for t in solution.transitions:
-        print(t.name)
-
-    print(f"solved")
-    print(f"cost: {solution.cost}")
-    print(f"solve time: {solution.time}s")
-    print(f"nodes generated: {solution.generated}")
-    print(f"nodes expanded: {solution.expanded}")
+        for t in solution.transitions:
+            print(t.name)
+        
+        print(f"solved: " + str(True))
+        print(f"cost: {solution.cost}")
+        print(f"solve time: {solution.time}s")
+        print(f"nodes generated: {solution.generated}")
+        print(f"nodes expanded: {solution.expanded}")
     
     sys.stdout.flush()  # flush output stream
