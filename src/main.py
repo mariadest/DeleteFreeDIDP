@@ -44,16 +44,13 @@ if __name__ == "__main__":
                 if effect.literal.negated:
                     del action.effects[index]
         sas_task = translate.pddl_to_sas(task)
-    except MemoryError:
-        print("MemoryError: failed creating SAS task")
     
     
-    # check if task is unsolvable by checking if downward created a trivial unsolvable task
-    if sas_task.goal.pairs == [(0, 1)]:
-        print(f"unsolvable: " +  str(True))
-        print(f"finished: " + str(True))
-    else: 
-        try:
+        # check if task is unsolvable by checking if downward created a trivial unsolvable task
+        if sas_task.goal.pairs == [(0, 1)]:
+            print(f"unsolvable: " +  str(True))
+            print(f"finished: " + str(True))
+        else: 
             # choose model
             if mapping_type == "int":
                 import int_mapping
@@ -69,10 +66,7 @@ if __name__ == "__main__":
                     model = set_mapping_mod.mapping(sas_task, zero_heuristic, goal_heuristic, ignore_actions)
                 else:
                     model = set_mapping.mapping(sas_task, zero_heuristic, goal_heuristic, ignore_actions)
-        except MemoryError:
-            print("MemoryError: failed creating model")
         
-        try:
             # solving
             solver = dp.CAASDy(model)
             solution = solver.search()
@@ -87,7 +81,9 @@ if __name__ == "__main__":
             print(f"solve time: {solution.time}s")
             print(f"nodes generated: {solution.generated}")
             print(f"nodes expanded: {solution.expanded}")
-        except MemoryError:
-            print("MemoryError: failed solving")
-        
-    sys.stdout.flush()  # flush output stream
+            
+    except MemoryError:
+        print("MemoryError")
+       
+    finally: 
+        sys.stdout.flush()  # flush output stream
