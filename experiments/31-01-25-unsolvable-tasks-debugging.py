@@ -71,6 +71,7 @@ def make_parser():
     parser.add_pattern("generated_nodes", r"nodes generated: (\d+)", type=int)
     parser.add_pattern("expanded_nodes", r"nodes expanded: (\d+)", type=int)
     parser.add_pattern("memory_error", r"(MemoryError)", type=bool)
+    parser.add_pattern("memory_error", r"MemoryError", type=bool, file="run.err"),
     parser.add_pattern(
         "node", 
         r"node: (.+)\n", 
