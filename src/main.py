@@ -1,8 +1,17 @@
 import sys
 import os
 import argparse
+import psutil
 
 import didppy as dp
+
+import psutil
+import os
+
+def get_memory_usage():
+    process = psutil.Process(os.getpid())
+    mem_info = process.memory_info()
+    return mem_info.rss / (1024 * 1024)  # Convert bytes to MB
 
 
 if __name__ == "__main__":
@@ -68,8 +77,11 @@ if __name__ == "__main__":
                     model = set_mapping.mapping(sas_task, zero_heuristic, goal_heuristic, ignore_actions)
         
             # solving
-            solver = dp.CAASDy(model)
+            solver = dp.CAASDy(model, )
+            print(f"Memory usage before solving: {get_memory_usage()} MB")
+            sys.stdout.flush()
             solution = solver.search()
+
 
             print("Transitions to apply:")
 
@@ -81,6 +93,7 @@ if __name__ == "__main__":
             print(f"solve time: {solution.time}s")
             print(f"nodes generated: {solution.generated}")
             print(f"nodes expanded: {solution.expanded}")
+            sys.stdout.flush()
             
     except MemoryError:
         print("MemoryError")
