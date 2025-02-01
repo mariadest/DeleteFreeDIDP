@@ -55,7 +55,8 @@ ATTRIBUTES = [
     "expanded_nodes",
     "error",
     "solver_exit_code",
-    "memory_error"
+    "memory_error",
+    "memory_allocation_error"
 ]
 
 ALGORITHMS = {
@@ -71,6 +72,7 @@ def make_parser():
     parser.add_pattern("generated_nodes", r"nodes generated: (\d+)", type=int)
     parser.add_pattern("expanded_nodes", r"nodes expanded: (\d+)", type=int)
     parser.add_pattern("memory_error", r"(MemoryError)", type=bool)
+    parser.add_pattern("memory_allocation_error", r"(memory allocation of \d+ bytes failed)", type=bool, file="run.err")
     parser.add_pattern(
         "node", 
         r"node: (.+)\n", 
