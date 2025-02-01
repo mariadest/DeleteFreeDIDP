@@ -78,7 +78,6 @@ if __name__ == "__main__":
         
             # solving
             solver = dp.CAASDy(model, )
-            print(f"Memory usage before solving: {get_memory_usage()} MB")
             sys.stdout.flush()
             solution = solver.search()
 
@@ -88,11 +87,13 @@ if __name__ == "__main__":
             for t in solution.transitions:
                 print(t.name)
             
-            print(f"finished: " + str(True))
+            print("finished")
             print(f"cost: {solution.cost}")
             print(f"solve time: {solution.time}s")
             print(f"nodes generated: {solution.generated}")
             print(f"nodes expanded: {solution.expanded}")
+            print(f"memory used: {get_memory_usage()} MB")
+
             sys.stdout.flush()
             
     except MemoryError:
