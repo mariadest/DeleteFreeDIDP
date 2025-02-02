@@ -88,7 +88,7 @@ exp.add_parser(make_parser())
 benchmarks = suites.build_suite(BENCHMARKS_DIR, strips_tasks)
 
 for algo, options in ALGORITHMS.items():
-    for benchmark in benchmarks[2:6]:        
+    for benchmark in benchmarks:        
         domain_file = benchmark.domain_file
         problem_file = benchmark.problem_file
         
