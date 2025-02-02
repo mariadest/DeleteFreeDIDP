@@ -7,6 +7,7 @@ import didppy as dp
 
 import psutil
 import os
+import gc
 
 def get_memory_usage():
     process = psutil.Process(os.getpid())
@@ -52,6 +53,7 @@ if __name__ == "__main__":
             for index, effect in reversed(list(enumerate(action.effects))):
                 if effect.literal.negated:
                     del action.effects[index]
+        gc.collect()
         sas_task = translate.pddl_to_sas(task)
     
     
@@ -61,6 +63,7 @@ if __name__ == "__main__":
             print(f"finished: " + str(True))
         else: 
             # choose model
+            gc.collect()
             if mapping_type == "int":
                 import int_mapping
                 import int_mapping_mod
@@ -77,8 +80,10 @@ if __name__ == "__main__":
                     model = set_mapping.mapping(sas_task, zero_heuristic, goal_heuristic, ignore_actions)
         
             # solving
+            gc.collect()
             solver = dp.CAASDy(model)
             sys.stdout.flush()
+            gc.collect()
             solution = solver.search()
 
 
