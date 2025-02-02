@@ -13,6 +13,18 @@ from downward.reports.absolute import AbsoluteReport
 from downward.reports import  PlanningReport
 
 from downward import suites
+
+class BaseReport(AbsoluteReport):
+    INFO_ATTRIBUTES = ["time_limit", "memory_limit"]
+    ERROR_ATTRIBUTES = [
+        "domain",
+        "problem",
+        "algorithm",
+        "unexplained_errors",
+        "error",
+        "node",
+    ]
+    
 # Check if on cluster
 NODE = platform.node()
 REMOTE = NODE.endswith(".scicore.unibas.ch") or NODE.endswith(".cluster.bc2.ch")
@@ -76,7 +88,7 @@ exp.add_parser(make_parser())
 benchmarks = suites.build_suite(BENCHMARKS_DIR, strips_tasks)
 
 for algo, options in ALGORITHMS.items():
-    for benchmark in benchmarks:        
+    for benchmark in benchmarks[2:6]:        
         domain_file = benchmark.domain_file
         problem_file = benchmark.problem_file
         
@@ -109,16 +121,6 @@ exp.add_step("start", exp.start_runs)
 exp.add_step("parse", exp.parse)
 exp.add_fetcher(name="fetch")
 
-class BaseReport(AbsoluteReport):
-    INFO_ATTRIBUTES = ["time_limit", "memory_limit"]
-    ERROR_ATTRIBUTES = [
-        "domain",
-        "problem",
-        "algorithm",
-        "unexplained_errors",
-        "error",
-        "node",
-    ]
 exp.add_report(BaseReport(attributes=ATTRIBUTES), outfile="absolute.html")
 
     
