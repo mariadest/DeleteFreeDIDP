@@ -8,7 +8,6 @@ import didppy as dp
 import psutil
 import os
 import gc
-import resource
 
 def get_memory_usage():
     process = psutil.Process(os.getpid())

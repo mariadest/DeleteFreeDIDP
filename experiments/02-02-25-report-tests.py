@@ -56,13 +56,18 @@ ATTRIBUTES = [
     "generated_nodes",
     "expanded_nodes",
     "memory_error",
-    "memory"
+    "memory",
+    "error",
 ]
 
 
 ALGORITHMS = {
+    "int_baseline" : ["int"],
+    "int_zero" : ["int", "-zh"],
     "int_goal" : ["int", "-gh"],
-    "int_goal_ignore" : ["int", "-gh", "-i"],
+    "set_baseline" : ["set"],
+    "set_zero" : ["set", "-zh"],
+    "set_goal" : ["set", "-gh"],
 }
 
 def make_parser():
@@ -75,6 +80,19 @@ def make_parser():
     parser.add_pattern("memory_error", r"(MemoryError)", type=str)
     parser.add_pattern("memory_error", r"(memory allocation of \d+ bytes failes)", type=str, file="run.err")
     parser.add_pattern("memory", r"memory used: (.+) MB", type=float)
+    parser.add_pattern(
+        "node", 
+        r"node: (.+)\n", 
+        type=str, 
+        file="driver.log", 
+        required=True
+    )
+    parser.add_pattern(
+        "solver_exit_code", 
+        r"solve exit code: (.+)\n", 
+        type=int, 
+        file="driver.log"
+    )
 
     return parser
 
