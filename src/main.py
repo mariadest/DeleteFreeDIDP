@@ -98,7 +98,8 @@ if __name__ == "__main__":
             
     except MemoryError:
         print("MemoryError")
-        sys.stdout.flush()
+        sys.stdout.flush
+        sys.exit()
        
     finally: 
         sys.stdout.flush()  # flush output stream
