@@ -15,11 +15,6 @@ def get_memory_usage():
     mem_info = process.memory_info()
     return mem_info.rss / (1024 * 1024)  # Convert bytes to MB
 
-def set_memory_limit(limit_mb):
-    resource.setrlimit(resource.RLIMIT_AS, (limit_mb * 1024 * 1024, limit_mb * 1024 * 1024))
-
-set_memory_limit(3584)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Select mapping type")
