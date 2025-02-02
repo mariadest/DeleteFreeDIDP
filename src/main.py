@@ -77,7 +77,7 @@ if __name__ == "__main__":
                     model = set_mapping.mapping(sas_task, zero_heuristic, goal_heuristic, ignore_actions)
         
             # solving
-            solver = dp.CAASDy(model, )
+            solver = dp.CAASDy(model)
             sys.stdout.flush()
             solution = solver.search()
 
@@ -98,8 +98,7 @@ if __name__ == "__main__":
             
     except MemoryError:
         print("MemoryError")
-        sys.stdout.flush
-        sys.exit()
+        sys.stdout.flush()
        
     finally: 
         sys.stdout.flush()  # flush output stream
