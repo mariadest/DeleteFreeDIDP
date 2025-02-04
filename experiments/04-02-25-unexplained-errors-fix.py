@@ -75,7 +75,8 @@ def make_parser():
     parser.add_pattern("expanded_nodes", r"nodes expanded: (\d+)", type=int)
     parser.add_pattern("memory_error", r"(MemoryError)", type=bool)
     parser.add_pattern("memory_error", r"(MemoryError)", type=bool, file="run.err")
-    parser.add_pattern("memory_allocation_error", r"memory allocation of (\d+) bytes failed", type=int, file="run.err")
+    parser.add_pattern("memory_error", r"(memory allocation of \d+ bytes failed)", type=bool, file="run.err")
+    parser.add_pattern("memory_allocation_error", r"(memory allocation of \d+ bytes failed)", type=bool, file="run.err")
     parser.add_pattern("memory", r"memory used: (.+) MB", type=float)
     parser.add_pattern(
         "node", 
@@ -104,7 +105,7 @@ exp.add_parser(make_parser())
 benchmarks = suites.build_suite(BENCHMARKS_DIR, strips_tasks)
 
 for algo, options in ALGORITHMS.items():
-    for benchmark in benchmarks:        
+    for benchmark in benchmarks[4:6]:        
         domain_file = benchmark.domain_file
         problem_file = benchmark.problem_file
         
@@ -139,14 +140,25 @@ exp.add_fetcher(name="fetch")
 
 pattern = re.compile(r"run.err: memory allocation of \d+ bytes failed\n")
 def remove_allocation_errors(run):
+    pattern = re.compile(r"run.err: memory allocation of \d+ bytes failed\n")
+
     if 'unexplained_errors' in run:
         run['unexplained_errors'] = [pattern.sub('', msg).strip() for msg in run['unexplained_errors']]
         run['unexplained_errors'] = [msg for msg in run['unexplained_errors'] if msg]
-    
+
+    if "memory_error" not in run or run["memory_error"] is None:
+        run["memory_error"] = False
+        
+    if "memory_allocation_error" not in run or run["memory_allocation_error"] is None:
+        run["memory_allocation_error"] = 0
+        
+    if "finished" not in run or run["finished"] is None:
+        run["finished"] = False
+
     return run
+
     
 report = BaseReport(filter=remove_allocation_errors)
 
-#exp.add_report(BaseReport(attributes=ATTRIBUTES), outfile="report.html")
 exp.add_report(report, outfile="report.html")
 exp.run_steps()
