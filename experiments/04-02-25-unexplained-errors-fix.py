@@ -63,7 +63,28 @@ ATTRIBUTES = [
 
 ALGORITHMS = {
     "int_baseline" : ["int"],
+    "int_ignore" : ["int", "-i"],
+    "int_track" : ["int", "-t"],
+    "int_zero" : ["int", "-zh"],
+    "int_goal" : ["int", "-gh"],
+    "int_zero_ignore" : ["int", "-zh", "-i"],
     "int_goal_ignore" : ["int", "-gh", "-i"],
+    "int_zero_track" : ["int", "-zh", "-t"],
+    "int_goal_track" : ["int", "-gh", "-t"],
+    "int_zero_ignore_track" : ["int", "-zh", "-i", "-t"],
+    "int_goal_ignore_track" : ["int", "-gh", "-i", "-t"],
+    
+    "set_baseline" : ["set"],
+    "set_ignore" : ["set", "-i"],
+    "set_track" : ["set", "-t"],
+    "set_zero" : ["set", "-zh"],
+    "set_goal" : ["set", "-gh"],
+    "set_zero_ignore" : ["set", "-zh", "-i"],
+    "set_goal_ignore" : ["set", "-gh", "-i"],
+    "set_zero_track" : ["set", "-zh", "-t"],
+    "set_goal_track" : ["set", "-gh", "-t"],
+    "set_zero_ignore_track" : ["set", "-zh", "-i", "-t"],
+    "set_goal_ignore_track" : ["set", "-gh", "-i", "-t"],
 }
 
 def make_parser():
@@ -105,7 +126,7 @@ exp.add_parser(make_parser())
 benchmarks = suites.build_suite(BENCHMARKS_DIR, strips_tasks)
 
 for algo, options in ALGORITHMS.items():
-    for benchmark in benchmarks[4:6]:        
+    for benchmark in benchmarks:        
         domain_file = benchmark.domain_file
         problem_file = benchmark.problem_file
         
