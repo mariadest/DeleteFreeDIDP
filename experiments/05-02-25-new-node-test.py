@@ -26,7 +26,7 @@ class BaseReport(AbsoluteReport):
     
 # Check if on cluster
 NODE = platform.node()
-REMOTE = NODE.endswith(".scicore.unibas.ch") or NODE.endswith(".cluster.bc2.ch")
+REMOTE = NODE.endswith(".scicore.unibas.ch") or NODE.endswith(".cluster.bc2.ch") or NODE.endswith("login12")
 
 SCRIPT_DIR = Path(__file__).parent
 REPO_DIR = SCRIPT_DIR.parent
