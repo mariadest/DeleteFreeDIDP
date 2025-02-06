@@ -41,10 +41,10 @@ optimal_strips = ["agricola-opt18-strips", "airport", "barman-opt11-strips", "ba
 
 if REMOTE:
     ENV = BaselSlurmEnvironment(email="maria.desteffani@unibas.ch", partition="infai_2", qos="infai")
-    strips_tasks =  ["blocks", "parcprinter-08-strips"]
+    strips_tasks =  optimal_strips
 else:
     ENV = LocalEnvironment(processes=2)
-    tasks = ["blocks"]
+    tasks = ["parcprinter-08-strips"]
     strips_tasks = tasks
     
     
@@ -64,28 +64,7 @@ ATTRIBUTES = [
 
 ALGORITHMS = {
     "int_baseline" : ["int"],
-    "int_ignore" : ["int", "-i"],
-    "int_track" : ["int", "-t"],
-    "int_zero" : ["int", "-zh"],
     "int_goal" : ["int", "-gh"],
-    "int_zero_ignore" : ["int", "-zh", "-i"],
-    "int_goal_ignore" : ["int", "-gh", "-i"],
-    "int_zero_track" : ["int", "-zh", "-t"],
-    "int_goal_track" : ["int", "-gh", "-t"],
-    "int_zero_ignore_track" : ["int", "-zh", "-i", "-t"],
-    "int_goal_ignore_track" : ["int", "-gh", "-i", "-t"],
-    
-    "set_baseline" : ["set"],
-    "set_ignore" : ["set", "-i"],
-    "set_track" : ["set", "-t"],
-    "set_zero" : ["set", "-zh"],
-    "set_goal" : ["set", "-gh"],
-    "set_zero_ignore" : ["set", "-zh", "-i"],
-    "set_goal_ignore" : ["set", "-gh", "-i"],
-    "set_zero_track" : ["set", "-zh", "-t"],
-    "set_goal_track" : ["set", "-gh", "-t"],
-    "set_zero_ignore_track" : ["set", "-zh", "-i", "-t"],
-    "set_goal_ignore_track" : ["set", "-gh", "-i", "-t"],
 }
 
 def make_parser():
@@ -162,13 +141,14 @@ exp.add_fetcher(name="fetch")
 
 def remove_allocation_errors(run):
     pattern_allocation = re.compile(r"run.err: memory allocation of \d+ bytes failed\n")
+    pattern_driver = re.compile(
+        r"driver\.err: \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} ERROR\s+solve finished and wrote \d+\.\d+ KiB to run\.log \(soft limit: 1024\.00 KiB\)"
+    )
 
     if 'unexplained_errors' in run:
         run['unexplained_errors'] = [pattern_allocation.sub('', msg).strip() for msg in run['unexplained_errors']]
         run['unexplained_errors'] = [msg for msg in run['unexplained_errors'] if msg]
-    
-    pattern_driver = re.compile(r"driver.err: 2025-02-05 17:50:20,933 ERROR    solve finished and wrote \d+.\d+ KiB to run.log (soft limit: 1024.00 KiB)")
-    if 'unexplained_errors' in run:
+        
         run['unexplained_errors'] = [pattern_driver.sub('', msg).strip() for msg in run['unexplained_errors']]
         run['unexplained_errors'] = [msg for msg in run['unexplained_errors'] if msg]
 
