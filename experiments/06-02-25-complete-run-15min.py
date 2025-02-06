@@ -32,7 +32,7 @@ SCRIPT_DIR = Path(__file__).parent
 REPO_DIR = SCRIPT_DIR.parent
 BENCHMARKS_DIR = Path(os.environ["DOWNWARD_BENCHMARKS"])
 
-TIME_LIMIT = 300    
+TIME_LIMIT = 900
 MEMORY_LIMIT = 3584
 
 
@@ -41,23 +41,24 @@ optimal_strips = ["agricola-opt18-strips", "airport", "barman-opt11-strips", "ba
 
 if REMOTE:
     ENV = BaselSlurmEnvironment(email="maria.desteffani@unibas.ch", partition="infai_2", qos="infai")
-    strips_tasks =  ["agricola-opt18-strips"]
+    strips_tasks =  optimal_strips
 else:
     ENV = LocalEnvironment(processes=2)
-    tasks = ["parcprinter-08-strips"]
+    tasks = ["agricola-opt18-strips"]
     strips_tasks = tasks
     
     
 ATTRIBUTES = [
-    "finished",
+    "1_finished",
     "unsolvable",
-    "solve_time",
-    "generated_nodes",
-    "expanded_nodes",
-    "memory_error",
-    "memory_allocation_error",
-    "memory",
+    "5_solve_time",
+    "7_generated_nodes",
+    "8_expanded_nodes",
+    "2_memory_error",
+    "3_memory_allocation_error",
+    "6_memory",
     "error",
+    "4_time_limit_reached"
 ]
 
 
@@ -90,16 +91,16 @@ ALGORITHMS = {
 
 def make_parser():
     parser = Parser()
-    parser.add_pattern("finished", r"(finished)", type=bool)
+    parser.add_pattern("1_finished", r"(finished)", type=bool)
     parser.add_pattern("unsolvable", r"(Generating unsolvable task)", type=bool)
-    parser.add_pattern("solve_time", r"solve time: (.+)s", type=float)
-    parser.add_pattern("generated_nodes", r"nodes generated: (\d+)", type=int)
-    parser.add_pattern("expanded_nodes", r"nodes expanded: (\d+)", type=int)
-    parser.add_pattern("memory_error", r"(MemoryError)", type=bool)
-    parser.add_pattern("memory_error", r"(MemoryError)", type=bool, file="run.err")
-    parser.add_pattern("memory_error", r"(memory allocation of \d+ bytes failed)", type=bool, file="run.err")
-    parser.add_pattern("memory_allocation_error", r"(memory allocation of \d+ bytes failed)", type=bool, file="run.err")
-    parser.add_pattern("memory", r"memory used: (.+) MB", type=float)
+    parser.add_pattern("5_solve_time", r"solve time: (.+)s", type=float)
+    parser.add_pattern("7_generated_nodes", r"nodes generated: (\d+)", type=int)
+    parser.add_pattern("8_expanded_nodes", r"nodes expanded: (\d+)", type=int)
+    parser.add_pattern("2_memory_error", r"(MemoryError)", type=bool)
+    parser.add_pattern("2_memory_error", r"(MemoryError)", type=bool, file="run.err")
+    parser.add_pattern("2_memory_error", r"(memory allocation of \d+ bytes failed)", type=bool, file="run.err")
+    parser.add_pattern("3_memory_allocation_error", r"(memory allocation of \d+ bytes failed)", type=bool, file="run.err")
+    parser.add_pattern("6_memory", r"memory used: (.+) MB", type=float)
     parser.add_pattern(
         "node", 
         r"node: (.+)\n", 
@@ -113,6 +114,12 @@ def make_parser():
         type=int, 
         file="driver.log"
     )
+    parser.add_pattern(
+        "4_time_limit_reached", 
+        r"(solve exit code: -24)", 
+        type=bool, 
+        file="driver.log",
+    )
 
     return parser
 
@@ -123,11 +130,10 @@ exp.add_resource("solver", REPO_DIR/"src")
 
 exp.add_parser(make_parser())
 
-# benchmarks = suites.build_suite(BENCHMARKS_DIR, strips_tasks)
 benchmarks = suites.build_suite(BENCHMARKS_DIR, strips_tasks)
 
 for algo, options in ALGORITHMS.items():
-    for benchmark in benchmarks:        
+    for benchmark in benchmarks[0:1]:        
         domain_file = benchmark.domain_file
         problem_file = benchmark.problem_file
         
