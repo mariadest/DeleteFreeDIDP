@@ -41,7 +41,7 @@ optimal_strips = ["agricola-opt18-strips", "airport", "barman-opt11-strips", "ba
 
 if REMOTE:
     ENV = BaselSlurmEnvironment(email="maria.desteffani@unibas.ch", partition="infai_2", qos="infai")
-    strips_tasks = optimal_strips
+    strips_tasks =  ["blocks", "parcprinter-08-strips"]
 else:
     ENV = LocalEnvironment(processes=2)
     tasks = ["blocks"]
@@ -160,12 +160,16 @@ exp.add_step("start", exp.start_runs)
 exp.add_step("parse", exp.parse)
 exp.add_fetcher(name="fetch")
 
-pattern = re.compile(r"run.err: memory allocation of \d+ bytes failed\n")
 def remove_allocation_errors(run):
-    pattern = re.compile(r"run.err: memory allocation of \d+ bytes failed\n")
+    pattern_allocation = re.compile(r"run.err: memory allocation of \d+ bytes failed\n")
 
     if 'unexplained_errors' in run:
-        run['unexplained_errors'] = [pattern.sub('', msg).strip() for msg in run['unexplained_errors']]
+        run['unexplained_errors'] = [pattern_allocation.sub('', msg).strip() for msg in run['unexplained_errors']]
+        run['unexplained_errors'] = [msg for msg in run['unexplained_errors'] if msg]
+    
+    pattern_driver = re.comppile(r"driver.err: 2025-02-05 17:50:20,933 ERROR    solve finished and wrote \d+.\d+ KiB to run.log (soft limit: 1024.00 KiB)")
+    if 'unexplained_errors' in run:
+        run['unexplained_errors'] = [pattern_driver.sub('', msg).strip() for msg in run['unexplained_errors']]
         run['unexplained_errors'] = [msg for msg in run['unexplained_errors'] if msg]
 
     if "memory_error" not in run or run["memory_error"] is None:
