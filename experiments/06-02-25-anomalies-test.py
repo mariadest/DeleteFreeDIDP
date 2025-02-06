@@ -41,7 +41,7 @@ optimal_strips = ["agricola-opt18-strips", "airport", "barman-opt11-strips", "ba
 
 if REMOTE:
     ENV = BaselSlurmEnvironment(email="maria.desteffani@unibas.ch", partition="infai_2", qos="infai")
-    strips_tasks =  ["spider-opt18-strips"]
+    strips_tasks =  ["agricona-opt18-strips"]
 else:
     ENV = LocalEnvironment(processes=2)
     tasks = ["parcprinter-08-strips"]
