@@ -167,7 +167,7 @@ def remove_allocation_errors(run):
         run['unexplained_errors'] = [pattern_allocation.sub('', msg).strip() for msg in run['unexplained_errors']]
         run['unexplained_errors'] = [msg for msg in run['unexplained_errors'] if msg]
     
-    pattern_driver = re.comppile(r"driver.err: 2025-02-05 17:50:20,933 ERROR    solve finished and wrote \d+.\d+ KiB to run.log (soft limit: 1024.00 KiB)")
+    pattern_driver = re.compile(r"driver.err: 2025-02-05 17:50:20,933 ERROR    solve finished and wrote \d+.\d+ KiB to run.log (soft limit: 1024.00 KiB)")
     if 'unexplained_errors' in run:
         run['unexplained_errors'] = [pattern_driver.sub('', msg).strip() for msg in run['unexplained_errors']]
         run['unexplained_errors'] = [msg for msg in run['unexplained_errors'] if msg]
