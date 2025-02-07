@@ -105,7 +105,7 @@ def make_parser():
     parser.add_pattern("memory_error", r"(memory allocation of \d+ bytes failed)", type=bool, file="run.err")
     parser.add_pattern("memory_allocation_error", r"(memory allocation of \d+ bytes failed)", type=bool, file="run.err")
     parser.add_pattern("memory", r"memory used: (.+) MB", type=float)
-    parser.add_pattern("cost", r"cost: (+\d)", type=int)
+    parser.add_pattern("cost", r"cost: (\d+)", type=int)
     parser.add_pattern(
         "node", 
         r"node: (.+)\n", 
