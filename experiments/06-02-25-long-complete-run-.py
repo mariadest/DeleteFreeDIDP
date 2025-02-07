@@ -187,6 +187,9 @@ def remove_allocation_errors(run):
         
     if "finished" not in run or run["finished"] is None:
         run["finished"] = False
+    
+    if "time_limit_reached" not in run or run["time_limit_reached"] is None:
+        run["time_limit_reached"] = False
 
     return run
 
