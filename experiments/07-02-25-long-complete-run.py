@@ -5,6 +5,7 @@ import platform
 import sys
 import re
 from pathlib import Path
+import math
 
 from lab.experiment import Experiment
 from lab.parser import Parser
