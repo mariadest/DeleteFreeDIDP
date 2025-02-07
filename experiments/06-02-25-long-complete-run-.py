@@ -49,16 +49,16 @@ else:
     
     
 ATTRIBUTES = [
-    "1_finished",
+    "finished",
     "unsolvable",
-    "5_solve_time",
-    "7_generated_nodes",
-    "8_expanded_nodes",
-    "2_memory_error",
-    "3_memory_allocation_error",
-    "6_memory",
+    "solve_time",
+    "generated_nodes",
+    "expanded_nodes",
+    "memory_error",
+    "memory_allocation_error",
+    "memory",
     "error",
-    "4_time_limit_reached"
+    "time_limit_reached"
 ]
 
 
@@ -91,16 +91,16 @@ ALGORITHMS = {
 
 def make_parser():
     parser = Parser()
-    parser.add_pattern("1_finished", r"(finished)", type=bool)
+    parser.add_pattern("finished", r"(finished)", type=bool)
     parser.add_pattern("unsolvable", r"(Generating unsolvable task)", type=bool)
-    parser.add_pattern("5_solve_time", r"solve time: (.+)s", type=float)
-    parser.add_pattern("7_generated_nodes", r"nodes generated: (\d+)", type=int)
-    parser.add_pattern("8_expanded_nodes", r"nodes expanded: (\d+)", type=int)
-    parser.add_pattern("2_memory_error", r"(MemoryError)", type=bool)
-    parser.add_pattern("2_memory_error", r"(MemoryError)", type=bool, file="run.err")
-    parser.add_pattern("2_memory_error", r"(memory allocation of \d+ bytes failed)", type=bool, file="run.err")
-    parser.add_pattern("3_memory_allocation_error", r"(memory allocation of \d+ bytes failed)", type=bool, file="run.err")
-    parser.add_pattern("6_memory", r"memory used: (.+) MB", type=float)
+    parser.add_pattern("solve_time", r"solve time: (.+)s", type=float)
+    parser.add_pattern("generated_nodes", r"nodes generated: (\d+)", type=int)
+    parser.add_pattern("expanded_nodes", r"nodes expanded: (\d+)", type=int)
+    parser.add_pattern("memory_error", r"(MemoryError)", type=bool)
+    parser.add_pattern("memory_error", r"(MemoryError)", type=bool, file="run.err")
+    parser.add_pattern("memory_error", r"(memory allocation of \d+ bytes failed)", type=bool, file="run.err")
+    parser.add_pattern("memory_allocation_error", r"(memory allocation of \d+ bytes failed)", type=bool, file="run.err")
+    parser.add_pattern("memory", r"memory used: (.+) MB", type=float)
     parser.add_pattern(
         "node", 
         r"node: (.+)\n", 
@@ -115,7 +115,7 @@ def make_parser():
         file="driver.log"
     )
     parser.add_pattern(
-        "4_time_limit_reached", 
+        "time_limit_reached", 
         r"(solve exit code: -24)", 
         type=bool, 
         file="driver.log",
