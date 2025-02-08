@@ -190,12 +190,17 @@ def remove_allocation_errors(run):
             run["time_score"] = 1 - math.log(T) / math.log(TIME_LIMIT)
     else:
         run["time_score"] = 0  # Default if solve_time is missing
+        
+    print("test")
 
     return run
 
 
-    
-report = Report(filter=remove_allocation_errors)
 
-exp.add_report(report, outfile="report.html")
+class TimeScoreReport(Report):
+    
+     
+exp.add_report(TimeScoreReport(), outfile="time_score_report.html")
+
+#exp.add_report(report, outfile="report.html")
 exp.run_steps()
