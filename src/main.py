@@ -92,6 +92,8 @@ if __name__ == "__main__":
             for t in solution.transitions:
                 print(t.name)
             
+            print("TRANSITIONS APPLIED: " + str(len(solution.transitions)))
+            
             print("finished")
             print(f"cost: {solution.cost}")
             print(f"solve time: {solution.time}s")

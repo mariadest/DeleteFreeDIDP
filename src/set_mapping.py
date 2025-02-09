@@ -1,66 +1,84 @@
-# Translator mapping all STRIPS variables to a single DyPDL set variable
 import didppy as dp
 
-# It's assumed that all variables have 2 values -> #TODO: add check?
 def mapping(sas_task, zero_heuristic, goal_heuristic, ignore_actions):
-    # NOTE: While we use 0 as the default value for negated variables, SAS+ (and therefore this translator) use 1 instead
-    model = dp.Model(float_cost = True)
+    model = dp.Model(float_cost=True)
     
     #----------------#
     #   VARIABLES    #
     #----------------#
     strips_var = model.add_object_type(number=len(sas_task.variables.value_names))
-    true_strips_vars = model.add_set_var(object_type=strips_var, target=[float(i) for i, var in enumerate(sas_task.variables.value_names) if sas_task.init.values[i] == 0])    # used to track which strips variables have accumulated
-
-    variable = model.add_object_type(number=len(sas_task.variables.value_names)) # used in transitions
+    true_strips_vars = model.add_set_var(
+        object_type=strips_var,
+        target=[float(i) for i, _ in enumerate(sas_task.variables.value_names) if sas_task.init.values[i] == 0]
+    )
+    variable = model.add_object_type(number=len(sas_task.variables.value_names))  # used in transitions
     
     #---------------#
     #   CONSTANTS   #
     #---------------#
-    action_costs = []
-    for action in sas_task.operators:
-        action_costs.append(float(action.cost))
+    action_costs = [float(action.cost) for action in sas_task.operators]
     cost_table = model.add_float_table(action_costs)
-
-
+    
+    # set-constants for each action
+    pre_consts = []
+    prev_consts = []
+    effect_consts = []
+    for action in sas_task.operators:
+        # preconditions
+        pre_const = model.create_set_const(
+            object_type=variable,
+            value=[var for var, pre, _, _ in action.pre_post if pre == 0]
+        )
+        pre_consts.append(pre_const)
+        
+        # prevail conditions
+        prev_const = model.create_set_const(
+            object_type=variable,
+            value=[var for var, val in action.prevail if val == 0]
+        )
+        prev_consts.append(prev_const)
+        
+        # effects
+        effect_const = model.create_set_const(
+            object_type=variable,
+            value=[var for var, _, val, _ in action.pre_post if val == 0]
+        )
+        effect_consts.append(effect_const)
+    
+    # goals
+    goal_const = model.create_set_const(
+        object_type=variable,
+        value=[var for var, val in sas_task.goal.pairs if val == 0]
+    )
+    
     #-----------------#
     #   BASE CASES    #
     #-----------------#
-    model.add_base_case([true_strips_vars.issuperset(model.create_set_const(object_type=variable, value = [var for var, val in sas_task.goal.pairs if val == 0]))])   
-
+    model.add_base_case([true_strips_vars.issuperset(goal_const)])
     
     # ------------------#
-    #    TRANSITIONS
+    #    TRANSITIONS   #
     # ------------------#
     for i, action in enumerate(sas_task.operators):
-        if ignore_actions:  
-            transition = dp.Transition(
-                name=str(i) +": " + str(action.name),
-                cost = cost_table[i] + dp.FloatExpr.state_cost(),
-                preconditions=[
-                    true_strips_vars.issuperset(model.create_set_const(object_type=variable, value = [var for var, pre, _, _ in action.pre_post if pre == 0]))
-                ] + [
-                    true_strips_vars.issuperset(model.create_set_const(object_type=variable, value = [var for var, val in action.prevail if val == 0])) 
-                ] + [
-                    ~model.create_set_const(object_type = variable, value = [var for var, _, val, _ in action.pre_post if val == 0]).issubset(true_strips_vars)
-                ],
-                effects=[
-                    (true_strips_vars, true_strips_vars.union(model.create_set_const(object_type=variable, value=[var for var, _, val, _ in action.pre_post if val == 0])))
-                ]
-            )
+        # base preconditions which need to always hold
+        base_precondition = [
+            true_strips_vars.issuperset(pre_consts[i]),
+            true_strips_vars.issuperset(prev_consts[i])
+        ]
+        
+        if ignore_actions:
+            # additional preconditions for ignoring actions
+            ignore_precondition = ~effect_consts[i].issubset(true_strips_vars)
+            pre = base_precondition + [ignore_precondition]
         else:
-            transition = dp.Transition(
-                name=str(i) +": " + str(action.name),
-                cost = cost_table[i] + dp.FloatExpr.state_cost(),
-                preconditions=[
-                    true_strips_vars.issuperset(model.create_set_const(object_type=variable, value = [var for var, pre, _, _ in action.pre_post if pre == 0]))
-                ] + [
-                    true_strips_vars.issuperset(model.create_set_const(object_type=variable, value = [var for var, val in action.prevail if val == 0])) 
-                ],
-                effects=[
-                    (true_strips_vars, true_strips_vars.union(model.create_set_const(object_type=variable, value=[var for var, _, val, _ in action.pre_post if val == 0])))
-                ]
-            )
+            pre = base_precondition
+        
+        transition = dp.Transition(
+            name=str(i) + ": " + str(action.name),
+            cost=cost_table[i] + dp.FloatExpr.state_cost(),
+            preconditions=pre,
+            effects=[(true_strips_vars, true_strips_vars.union(effect_consts[i]))]
+        )
         model.add_transition(transition)
     
     # ------------------#
@@ -70,9 +88,7 @@ def mapping(sas_task, zero_heuristic, goal_heuristic, ignore_actions):
         model.add_dual_bound(0)
     
     if goal_heuristic:
-        max_var_count = max(len({var for var, _, _, _ in action.pre_post}) for action in sas_task.operators)
-        model.add_dual_bound((len(sas_task.goal.pairs) - sum(
-        (true_strips_vars.contains(var)).if_then_else(1, 0)
-        for var, val in sas_task.goal.pairs if val == 0)) / max_var_count)   
-        
+        max_effects = max(len(action.pre_post) for action in sas_task.operators)
+        model.add_dual_bound((goal_const - true_strips_vars).len() / max_effects)
+    
     return model
