@@ -127,10 +127,12 @@ def mapping(sas_task, zero_heuristic, goal_heuristic, ignore_actions):
 
     # dual bound which expresses nr of goals not fulfilled
     if goal_heuristic:
-        max_var_count = max(len({var for var, _, _ , _ in action.pre_post}) for action in sas_task.operators)
+        max_effects = max(float(len(action.pre_post)) for action in sas_task.operators)
         model.add_dual_bound(
-            len(sas_task.goal.pairs) - sum(
-            (dypdl_vars[var] == val).if_then_else(1, 0)
-            for var, val in sas_task.goal.pairs) / max_var_count)
+            sum(
+            (dypdl_vars[var] != val).if_then_else(1, 0)
+            for var, val in sas_task.goal.pairs)
+            / max_effects
+        )
     
     return model

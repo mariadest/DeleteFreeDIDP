@@ -136,12 +136,10 @@ def mapping(sas_task, zero_heuristic, goal_heuristic, ignore_actions):
         model.add_dual_bound(0.0)
     
     if goal_heuristic:
-        max_var_count = max(len({var for var, _, _, _ in op.pre_post})
-                            for op in sas_task.operators)
-        bound_expr = (len(sas_task.goal.pairs) - sum(
-            (true_strips_vars.contains(var)).if_then_else(1.0, 0.0)
-            for var, val in sas_task.goal.pairs if val == 0
-        )) / max_var_count
-        model.add_dual_bound(bound_expr)
+        max_effects = max(float(len(action.pre_post)) for action in sas_task.operators)
+            
+        model.add_dual_bound(
+            (dp.FloatExpr(max_effects) > 0).if_then_else(((goal_const - true_strips_vars).len() / max_effects), 0)
+        )
         
     return model
