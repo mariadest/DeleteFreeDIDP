@@ -28,24 +28,25 @@ class BaseReport(AbsoluteReport):
         "error",
         "node",
     ]
-    memory = Attribute("memory", function=arithmetic_mean)
-    time_score = Attribute("time_score", function=geometric_mean)
-    generated_nodes = Attribute("generated_nodes", function=geometric_mean)
-    expanded_nodes = Attribute("expanded_nodes", function=geometric_mean)
-    ATTRIBUTES = [
-        memory,
-        time_score,
-        generated_nodes,
-        expanded_nodes,
-        "finished",
-        "unsolvable",
-        "solve_time",
-        "memory_error",
-        "memory_allocation_error",
-        "error",
-        "time_limit_reached",
-        "cost"
-    ]
+memory = Attribute("memory", function=geometric_mean)
+# time_score = Attribute("time_score", function=geometric_mean)
+generated_nodes = Attribute("generated_nodes", function=geometric_mean)
+expanded_nodes = Attribute("expanded_nodes", function=geometric_mean)
+
+ATTRIBUTES = [
+    memory,
+    #time_score,
+    generated_nodes,
+    expanded_nodes,
+    '''"finished",
+    "unsolvable",
+    "solve_time",
+    "memory_error",
+    "memory_allocation_error",
+    "error",
+    "time_limit_reached",
+    "cost"'''
+]
 
         
     
@@ -102,17 +103,17 @@ ALGORITHMS = {
 
 def make_parser():
     parser = Parser()
-    parser.add_pattern("finished", r"(finished)", type=bool)
+    '''parser.add_pattern("finished", r"(finished)", type=bool)
     parser.add_pattern("unsolvable", r"(Generating unsolvable task)", type=bool)
-    parser.add_pattern("solve_time", r"solve time: (.+)s", type=float)
+    parser.add_pattern("solve_time", r"solve time: (.+)s", type=float)'''
     parser.add_pattern("generated_nodes", r"nodes generated: (\d+)", type=int)
     parser.add_pattern("expanded_nodes", r"nodes expanded: (\d+)", type=int)
-    parser.add_pattern("memory_error", r"(MemoryError)", type=bool)
+    '''parser.add_pattern("memory_error", r"(MemoryError)", type=bool)
     parser.add_pattern("memory_error", r"(MemoryError)", type=bool, file="run.err")
     parser.add_pattern("memory_error", r"(memory allocation of \d+ bytes failed)", type=bool, file="run.err")
-    parser.add_pattern("memory_allocation_error", r"(memory allocation of \d+ bytes failed)", type=bool, file="run.err")
+    parser.add_pattern("memory_allocation_error", r"(memory allocation of \d+ bytes failed)", type=bool, file="run.err")'''
     parser.add_pattern("memory", r"memory used: (.+) MB", type=float)
-    parser.add_pattern("cost", r"cost: (\d+)", type=int)
+    #parser.add_pattern("cost", r"cost: (\d+)", type=int)
     parser.add_pattern(
         "node", 
         r"node: (.+)\n", 
@@ -126,12 +127,12 @@ def make_parser():
         type=int, 
         file="driver.log"
     )
-    parser.add_pattern(
+    '''parser.add_pattern(
         "time_limit_reached", 
         r"(solve exit code: -24)", 
         type=bool, 
         file="driver.log",
-    )
+    )'''
 
     return parser
 
@@ -218,7 +219,8 @@ def remove_allocation_errors(run):
     return run
 
     
-report = BaseReport(attributes=["expanded_nodes", "memory"], filter_algorithm=["set_baseline", "int_baseline"], filter=remove_allocation_errors)
+#report = BaseReport(attributes=ATTRIBUTES, filter=remove_allocation_errors)
+report = BaseReport(attributes=ATTRIBUTES)
 
 exp.add_report(report, outfile="report.html")
 exp.run_steps()
