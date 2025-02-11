@@ -211,7 +211,7 @@ def remove_allocation_errors(run):
     return run
 
     
-report = BaseReport(filter=remove_allocation_errors)
+report = BaseReport(filter_algorithm=["set_baseline", "int_baseline"], filter=remove_allocation_errors)
 
 exp.add_report(report, outfile="report.html")
 exp.run_steps()
