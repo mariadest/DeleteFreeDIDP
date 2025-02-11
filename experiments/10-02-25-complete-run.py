@@ -11,8 +11,12 @@ from lab.experiment import Experiment
 from lab.parser import Parser
 from lab.environments import BaselSlurmEnvironment, LocalEnvironment
 from downward.reports.absolute import AbsoluteReport
+from lab.reports import geometric_mean
+from lab.reports import arithmetic_mean
+from lab.reports import Attribute
 
 from downward import suites
+
 
 class BaseReport(AbsoluteReport):
     INFO_ATTRIBUTES = ["time_limit", "memory_limit"]
@@ -24,7 +28,26 @@ class BaseReport(AbsoluteReport):
         "error",
         "node",
     ]
-    
+    memory = Attribute("memory", function=arithmetic_mean)
+    time_score = Attribute("time_score", function=geometric_mean)
+    generated_nodes = Attribute("generated_nodes", function=geometric_mean)
+    expanded_nodes = Attribute("expanded_nodes", function=geometric_mean)
+    ATTRIBUTES = [
+        memory,
+        time_score,
+        generated_nodes,
+        expanded_nodes,
+        "finished",
+        "unsolvable",
+        "solve_time",
+        "memory_error",
+        "memory_allocation_error",
+        "error",
+        "time_limit_reached",
+        "cost"
+    ]
+
+        
     
 # Check if on cluster
 NODE = platform.node()
@@ -48,22 +71,6 @@ else:
     ENV = LocalEnvironment(processes=2)
     tasks = ["agricola-opt18-strips"]
     strips_tasks = tasks
-    
-    
-ATTRIBUTES = [
-    "finished",
-    "unsolvable",
-    "solve_time",
-    "generated_nodes",
-    "expanded_nodes",
-    "memory_error",
-    "memory_allocation_error",
-    "memory",
-    "error",
-    "time_limit_reached",
-    "time_score",
-    "cost",
-]
 
 
 
