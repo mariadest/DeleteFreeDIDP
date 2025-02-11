@@ -38,14 +38,6 @@ ATTRIBUTES = [
     #time_score,
     generated_nodes,
     expanded_nodes,
-    '''"finished",
-    "unsolvable",
-    "solve_time",
-    "memory_error",
-    "memory_allocation_error",
-    "error",
-    "time_limit_reached",
-    "cost"'''
 ]
 
         
